@@ -2,10 +2,10 @@
  */
 
 #include <xeroskernel.h>
+#include <i386.h>
 
 long getSizeOfFirstFreeMemSlot();
 long getSizeOfSecondFreeMemSlot();
-long getHoleEnd();
 int getAllocationSizeBytes(int);
 struct memHeader* traverseFreeList(int);
 struct memHeader* createMemHeader(long);
@@ -39,31 +39,33 @@ void kmeminit(void) {
 	unsigned char* memStart = (unsigned char*) freemem;
 	struct memHeader *hdr, *hdr2;
 
+
+	// You are having address issues.
 	hdr = createMemHeader(freemem);
 	hdr->size = (unsigned long) getSizeOfFirstFreeMemSlot();
-	hdr->next = (struct memHeader*) (memStart + getDataEndOfMemNode(&hdr));
 	hdr->prev = 0;
-	hdr->sanityCheck = &hdr->dataStart;
+	hdr->sanityCheck = hdr->dataStart;
 	
-	hdr2 = createMemHeader(getHoleEnd());
-	hdr2->prev = &hdr;
+	hdr2 = createMemHeader(HOLEEND);
+	hdr2->prev = hdr;
 	hdr2->size = (unsigned long) getSizeOfSecondFreeMemSlot();
-	hdr2->sanityCheck = &hdr2->dataStart;
+	hdr2->sanityCheck = hdr2->dataStart;
 	hdr2->next = 0;
 
-	memSlot = &hdr;
-
+	hdr->next = hdr2;
+	memSlot = hdr;
+	kprintf("\nmemSlot: %d\n", memSlot);
 	kprintf("\nFreemem: %d\n", freemem);
-	kprintf("\nsize of memHeader: %d\n", sizeof(struct memHeader));
+	kprintf("\nsize of memHeader: %d; holesize: %d\n", sizeof(struct memHeader), HOLEEND - HOLESTART);
 
-	kprintf("%d  dataStart %d %d %d\n", hdr, &hdr->dataStart, hdr->sanityCheck, sizeof(hdr));
+	kprintf("%d  dataStart %d %d %d %d\n", hdr, &hdr->dataStart, hdr->sanityCheck, sizeof(hdr), hdr->next);
   	kprintf("%d  dataStart %d %d %d\n", hdr2, &hdr2->dataStart, hdr2->sanityCheck, sizeof(struct memHeader));
 
-
+	sleep();
 	testTraverseFreeList();
 
-	void* memPointer = kmalloc(5);
-	kfree(memPointer);
+	//void* memPointer = kmalloc(5);
+	//kfree(memPointer);
 	
 	//testTraverseFreeList();
 }
@@ -77,6 +79,7 @@ void testTraverseFreeList() {
 	}	
 		kprintf("final: ");
 		printMemHeader(currentHeader);
+		kprintf("\nmemslot: %d\n", memSlot);
 }
 
 void printMemHeader(struct memHeader* hdr) {
@@ -95,6 +98,7 @@ void sleep() {
 struct memHeader* createMemHeader(long memLoc) {
 	struct memHeader* hdr;	
 	hdr = (struct memHeader*) (unsigned char*) memLoc;
+	kprintf("createMemHeader: %d\n", hdr);
 	return hdr;
 }
 
@@ -102,41 +106,31 @@ struct memHeader* createMemHeader(long memLoc) {
 	Gets the size of the first free mem space until the beginning of the HOLE
 */
 long getSizeOfFirstFreeMemSlot() {
-	long HOLESTART = (640 * 1024);
 	extern long freemem;
-
-	return (long) (HOLESTART - freemem) - sizeof(struct memHeader);
+	long size = HOLESTART - freemem - sizeof(struct memHeader);
+	kprintf("Holestart: %d; Size of first free mem slot: %d\n", HOLESTART, size);
+	return size;
 }
 
 /**
 	Returns the end address of a given memory node.
 */
 unsigned long getDataEndOfMemNode(struct memHeader* mem) {
-	return (mem->size + sizeof(struct memHeader));
+	unsigned long endAddr = ((long) &mem->dataStart) + mem->size;
+	kprintf("mem size: %d; mem: %d; Mem node end addr: %d\n", mem->size, mem, endAddr);	
+	return endAddr;
 }
 
 /**
 	Calculates the size of the free memory node that comes after the memory hole
 */
 long getSizeOfSecondFreeMemSlot() {
-	// These variables are found in i386.c
-	long HOLEEND = getHoleEnd();
 	extern char	*maxaddr;	// add 1 for the number in the pdf?
 	long size = (maxaddr - HOLEEND) - sizeof(struct memHeader);	
 	kprintf("\nmaxAddr: %d\nHoleEnd: %d; size: %d\n", maxaddr, HOLEEND, size);
 	
 	return (maxaddr - HOLEEND) - sizeof(struct memHeader);
 }
-
-/**
-	Finds the end address of the memory hole
-*/
-long getHoleEnd() {
-	long HOLESIZE = 600;
-	long HOLEEND = ((1024 + HOLESIZE) * 1024);
-	return HOLEEND;
-}
-
 
 /**
 	Allocates memory of a given size.
@@ -169,7 +163,7 @@ void *kmalloc(int size) {
 	struct memHeader* oldNextNode = memAllocationSlot->next;
 
 	// Create new free node where newly filled node ends.
-	unsigned char* endOfMemNode = getDataEndOfMemNode(&memAllocationSlot);
+	unsigned char* endOfMemNode = (unsigned char*) getDataEndOfMemNode(memAllocationSlot);
 	memAllocationSlot->next = endOfMemNode;
 	struct memHeader* newFreeNode = memAllocationSlot->next;
 
@@ -181,7 +175,7 @@ void *kmalloc(int size) {
 
 	newFreeNode->next = oldNextNode;
 	newFreeNode->sanityCheck = newFreeNode->dataStart;
-	memAllocationSlot->sanityCheck = &memAllocationSlot->dataStart;
+	memAllocationSlot->sanityCheck = memAllocationSlot->dataStart;
 	updateMemListPointer(newFreeNode); // Why do I not pass through &newFreeNode??
 
 	newFreeNode->size = (previousSize - memAllocationSlot->size) - sizeof(struct memHeader);
@@ -297,7 +291,7 @@ void placeMemInFreeList(struct memHeader *hdr) {
 	the free list is returned. 
 */
 struct memHeader* getClosestHdrFromFreeList(struct memHeader* hdr) {
-	struct memHeader* currentHdr = memSlot;
+	struct memHeader* currentHdr = &memSlot;
 	struct memHeader* closestPrecedingHdr = currentHdr;
 	long hdrAddress = (long) hdr;
 

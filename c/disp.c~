@@ -2,7 +2,7 @@
  */
 
 #include <xeroskernel.h>
-
+/*
 void initializeProcessQueue();
 void dispatch();
 void syscreate();
@@ -40,13 +40,13 @@ struct pcb {
 	Initializes the process ready queue
 */
 void initializeProcessQueue() { 
-	struct pcb* process;
+	/*struct pcb* process;
 	readyQueueBeginning->process = process;
 	readyQueueBeginning->next = 0;
 	readyQueueBeginning->prev = 0;
 	readyQueueEnd = readyQueueBeginning;
 	pcbTable[0] = readyQueueBeginning;
-}
+*/}
 
 
 void dispatch() { /*
@@ -85,7 +85,7 @@ void ready() {
 	Removes the next process from the ready queue and 
 	returns an index or a pointer to its process control block
 */
-struct pcb* next() {
+struct pcb* next() {/*
 	struct pcb* process = readyQueueBeginning->process;
 
 	if (readyQueueBeginning != readyQueueEnd) {
@@ -95,5 +95,5 @@ struct pcb* next() {
 	kprintf("\nreadyQueueBeginning1: %d; readyQueueBeginning next: %d\n", readyQueueBeginning, readyQueueBeginning->next);
 	kprintf("\nreadyQueueBeginning2: %d\n", readyQueueBeginning);
 	readyQueueBeginning = &readyQueueBeginning->next;
-	return process;
+	return process;*/
 }
