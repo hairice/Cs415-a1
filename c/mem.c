@@ -7,6 +7,7 @@
 long getSizeOfFirstFreeMemSlot();
 long getSizeOfSecondFreeMemSlot();
 int getAllocationSizeBytes(int);
+short isAllocSizeValid(int);
 struct memHeader* traverseFreeList(int);
 struct memHeader* createMemHeader(long);
 void* kmalloc(int);
@@ -19,7 +20,6 @@ void testTraverseFreeList();
 
 
 static struct memHeader *memSlot;
-const int PARAGRAPH_SIZE_BYTES = 16;
 
 struct memHeader {
   unsigned long size;
@@ -60,11 +60,9 @@ void kmeminit(void) {
 
 	kprintf("%d  dataStart %d %d %d %d\n", hdr, &hdr->dataStart, hdr->sanityCheck, sizeof(hdr), hdr->next);
   	kprintf("%d  dataStart %d %d %d\n", hdr2, &hdr2->dataStart, hdr2->sanityCheck, sizeof(struct memHeader));
-
-	sleep();
 	testTraverseFreeList();
 
-	//void* memPointer = kmalloc(5);
+	void* memPointer = kmalloc(5);
 	//kfree(memPointer);
 	
 	//testTraverseFreeList();
@@ -141,10 +139,7 @@ long getSizeOfSecondFreeMemSlot() {
 void *kmalloc(int size) {
 	kprintf("\n----------KMALLOC(%d)-----------\n", size);
 
-	//testTraverseFreeList();	
-
-	if (size < 1) {
-		// Given size is invalid
+	if (!isAllocSizeValid(size)) {
 		return -1;
 	}
 	
@@ -180,42 +175,34 @@ void *kmalloc(int size) {
 
 	newFreeNode->size = (previousSize - memAllocationSlot->size) - sizeof(struct memHeader);
 
+	memSlot = newFreeNode;
+
 	kprintf("previous allocated size: %d\n", previousSize);
 	kprintf("just allocated node loc: %d; size: %d\n", memAllocationSlot, memAllocationSlot->size);
 	kprintf("new free node loc: %d; size: %d\n", newFreeNode, newFreeNode->size);
 
 	// TODO: Bug?
 	//	The extra nodes don't show up here, but they have still been created?
+	testTraverseFreeList();
 	
 	return memAllocationSlot->dataStart;
+}
+
+short isAllocSizeValid(int size) {
+	return size >= 1;
 }
 
 /**
 	Finds out how many paragraphs are needed to allocate for a given amount of memory,
 	and then returns the result in bytes
 */
-int getAllocationSizeBytes(int size) {
-	int allocationSize;
-	// TODO: Change to bit-masking...?
-	if (size % PARAGRAPH_SIZE_BYTES == 0) {
-		allocationSize = size;
-	} else {
-		allocationSize = (size / PARAGRAPH_SIZE_BYTES) + 1;
-		allocationSize *= PARAGRAPH_SIZE_BYTES;
-	}
-
-	return allocationSize;
-}
-
-
-/*int getAllocationSizeBytes(int req_sz) {
-	int amnt;	
+int getAllocationSizeBytes(int req_sz) {
+	int amnt;
 	amnt = (req_sz)/16 + ((req_sz%16)?1:0);
 	amnt = amnt*16 + sizeof(struct memHeader);
 
-
 	return amnt;
-}*/
+}
 
 /**
 	Traverses the free memroy list for a free slot that can accomodate the given amount
