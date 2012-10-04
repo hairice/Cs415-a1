@@ -63,7 +63,7 @@ void kmeminit(void) {
 	testTraverseFreeList();
 
 	void* memPointer = kmalloc(5);
-	//kfree(memPointer);
+	kfree(memPointer);
 	
 	testTraverseFreeList();
 }
@@ -181,10 +181,6 @@ void *kmalloc(int size) {
 	kprintf("previous allocated size: %d\n", previousSize);
 	kprintf("just allocated node loc: %d; size: %d\n", memAllocationSlot, memAllocationSlot->size);
 	kprintf("new free node loc: %d; size: %d\n", newFreeNode, newFreeNode->size);
-
-
-	// TODO: Bug?
-	//	The extra nodes don't show up here, but they have still been created?
 	
 	return memAllocationSlot->dataStart;
 }
@@ -228,7 +224,7 @@ struct memHeader* traverseFreeList(int size) {
 */
 void updateMemListPointer(struct memHeader* hdr) {
 	if (!hdr->prev) {
-		memSlot = &hdr;
+		memSlot = hdr;
 	}
 }
 
@@ -252,23 +248,21 @@ void kfree(void *ptr) {
 */
 void placeMemInFreeList(struct memHeader *hdr) {
 	struct memHeader* closestHdr = getClosestHdrFromFreeList(hdr);
+	kprintf("Free mem list: hdr: %d; closest: %d\n", hdr, closestHdr);
 	if ((long) closestHdr > (long) hdr) {
 		// This should only happen if hdr is before the beginning of the free list
-		kprintf("ClosestHdr: %d; hdr: %d\n", closestHdr, hdr);		
-		hdr->next = &closestHdr;
-		closestHdr->prev = &hdr;
+		hdr->next = closestHdr;
+		closestHdr->prev = hdr;
 		hdr->prev = 0;
-		memSlot = &hdr;
+		memSlot = hdr;
 	} else {
-		//kprintf("\nIn the else\n");
 		hdr->next = &closestHdr->next;
 		closestHdr->next = hdr;
-		//kprintf("hdr: %d; closest: %d\n", hdr, closestHdr);
-		//printMemHeader(hdr);
-		//printMemHeader(closestHdr);
 		hdr->prev = closestHdr;
 		hdr->next->prev = hdr;
 	}
+
+	hdr->sanityCheck = hdr->dataStart;
 
 	//testTraverseFreeList();
 }
@@ -279,9 +273,10 @@ void placeMemInFreeList(struct memHeader *hdr) {
 	the free list is returned. 
 */
 struct memHeader* getClosestHdrFromFreeList(struct memHeader* hdr) {
-	struct memHeader* currentHdr = &memSlot;
+	struct memHeader* currentHdr = memSlot;
 	struct memHeader* closestPrecedingHdr = currentHdr;
 	long hdrAddress = (long) hdr;
+	kprintf("getting closest: hdr: %d; memslot: %d; current: %d; closest: %d\n", hdr, memSlot, currentHdr, closestPrecedingHdr);
 
 	while (((long) closestPrecedingHdr->next < hdrAddress) && currentHdr->next) {
 		//kprintf("iterating: header: %d\n", currentHdr);
@@ -290,8 +285,8 @@ struct memHeader* getClosestHdrFromFreeList(struct memHeader* hdr) {
 	}
 
 	//kprintf("iterating: final: %d\n", currentHdr);
-	//kprintf("Selected %d for the header at %d. Its size is: %d\n", 
-	//	closestPrecedingHdr, hdr, closestPrecedingHdr->size);
+	kprintf("Selected %d for the header at %d. Its size is: %d\n", 
+		closestPrecedingHdr, hdr, closestPrecedingHdr->size);
 	
 	return closestPrecedingHdr;
 
