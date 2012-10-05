@@ -10,7 +10,6 @@ void dispatch();
 void syscreate();
 void sysstop();
 void sysyield();
-void create();
 void ready(struct pcb*);
 struct pcb* next();
 void cleanup(struct pcb*);
@@ -23,13 +22,6 @@ static struct pcb* currentProcess;
 static struct processQueueNode* readyQueueBeginning;
 static struct processQueueNode* stoppedQueue;
 static struct processQueueNode* pcbTable[0];
-
-
-struct pcb {
-	int pid;
-	int state;
-	int priority;
-};
 
 struct processQueueNode {
 	struct processQueueNode* prev;
@@ -78,7 +70,7 @@ void dispatch() {
 		//short request = contextswitch( process );
 		short request = CREATE;
 		switch(request) {
-			case(CREATE): create(); break;
+			case(CREATE): create(currentProcess, 16); break;
 			case(YIELD): ready(process); process = next(); break;
 			case(STOP): cleanup(process); process = next(); break;
 		}
@@ -96,13 +88,6 @@ struct pcb* next() {
 	
 	readyQueueBeginning = readyQueueBeginning->next;
 	return process;
-}
-
-void create() {
-	//kprintf("\nCreating new process\n");
-	struct pcb* process = kmalloc(sizeof(struct pcb));
-	
-	ready(process);
 }
 
 /**

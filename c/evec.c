@@ -13,7 +13,7 @@ extern long	defevec[];
 extern int	userret(void);
 
 static void set_evec(unsigned int xnum, unsigned long handler);
-
+void setEvec(unsigned int, unsigned long);
 
 void initevec(void)
 {
@@ -49,6 +49,10 @@ static void set_evec(unsigned int xnum, unsigned long handler)
 	pidt->igd_dpl = 0;
 	pidt->igd_present = 1;
 	pidt->igd_hoffset = handler >> 16;
+}
+
+void setEvec(unsigned int xnum, unsigned long handler) {
+	set_evec(xnum, handler);
 }
 
 char *inames[17] = {

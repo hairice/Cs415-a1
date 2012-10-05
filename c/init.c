@@ -29,8 +29,10 @@ void initproc( void )				/* The beginning */
 
 	kmeminit();
 	initializeProcessQueue();
-
+	
+	contextinit();
 	dispatch();
+
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }

@@ -32,8 +32,17 @@ typedef	char		Bool;		/* Boolean type			*/
 
 
 /* structures */
-struct pcb;
+struct pcb {
+	int pid;
+	int state;
+	int priority;
+	unsigned int esp;
+	struct processStack* stack;
+};
+
 struct processQueueNode;
+struct processStack;
+struct processStack;
 
 /* Functions defined by startup code */
 
@@ -58,5 +67,11 @@ extern void dispatch();
 extern void syscreate();
 extern void sysstop();
 extern void sysyield();
+extern void ready(struct pcb* process);
+
+extern void contextswitch();
+extern void contextinit();
+extern void setEvec(unsigned int, unsigned long);
+extern int create(void (*func)(), int stackSize);
 
 
