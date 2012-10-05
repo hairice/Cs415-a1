@@ -28,9 +28,9 @@ void initproc( void )				/* The beginning */
 	kprintf( "\n\nCPSC 415, 2012W1 \n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end );
 
 	kmeminit();
-	//initializeProcessQueue();
+	initializeProcessQueue();
 
-
+	dispatch();
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }

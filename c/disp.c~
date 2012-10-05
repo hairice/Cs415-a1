@@ -2,63 +2,81 @@
  */
 
 #include <xeroskernel.h>
-/*
+
 void initializeProcessQueue();
 void dispatch();
 void syscreate();
 void sysstop();
 void sysyield();
-void ready();
+void ready(struct pcb*);
+void create();
 struct pcb* next();
+void printPcbData(char*, struct processQueueNode*);
 
 
 /* Your code goes here */
 
+static struct pcb* currentProcess;
+static struct processQueueNode* readyQueueBeginning;
+static struct processQueueNode* pcbTable[0];
 
-static struct processQueue* readyQueueBeginning;
-static struct processQueue* readyQueueEnd;
-static struct processQueue* pcbTable[0];
-
-const short CREATE = 1;
-const short YIELD = 2;
-const short STOP = 3;
-
-
-struct processQueue {
-	struct readyProcessLink* prev;
-	struct readyProcessLink* next;
-	struct pcb* process;
-};
 
 struct pcb {
 	int pid;
-	unsigned char state;
-	unsigned char priority;
+	int state;
+	int priority;
 };
+
+struct processQueueNode {
+	struct processQueueNode* prev;
+	struct processQueueNode* next;
+	struct pcb* process;
+};
+
 
 /**
 	Initializes the process ready queue
 */
 void initializeProcessQueue() { 
-	/*struct pcb* process;
+	struct pcb* process;
+	process->state = READY;
 	readyQueueBeginning->process = process;
-	readyQueueBeginning->next = 0;
-	readyQueueBeginning->prev = 0;
-	readyQueueEnd = readyQueueBeginning;
+	readyQueueBeginning->next = readyQueueBeginning;
+	readyQueueBeginning->prev = readyQueueBeginning;
 	pcbTable[0] = readyQueueBeginning;
-*/}
+}
 
 
-void dispatch() { /*
+void dispatch() { 
 	struct pcb* process = next();
 	for( ;; ) {
-		request = contextswitch( process );
-		switch( request ) {
-			case( CREATE ): create( ... ); break;
-			case( YIELD ): ready( process ); process = next(); break;
-			case( STOP ): cleanup( process ); process = next(); break;
+		//short request = contextswitch( process );
+		short request = CREATE;
+		switch(request) {
+			case( CREATE ): create(); break;
+			//case( YIELD ): ready( process ); process = next(); break;
+			//case( STOP ): cleanup( process ); process = next(); break;
 		}
-	} */
+	}
+}
+
+/**
+	Removes the next process from the ready queue and 
+	returns an index or a pointer to its process control block
+*/
+struct pcb* next() {
+	struct pcb* process = readyQueueBeginning->process;
+
+	kprintf("\nreadyQueueBeginning1: %d; readyQueueBeginning next: %d\n", readyQueueBeginning, readyQueueBeginning->next);
+	
+	readyQueueBeginning = readyQueueBeginning->next;
+	return process;
+}
+
+void create() {
+	kprintf("\nCreating new process\n");
+	struct pcb* process;
+	ready(process);
 }
 
 void syscreate() {
@@ -77,23 +95,25 @@ void sysyield() {
 	Takes an index or pointer to a process control block and 
 	adds it to the ready queue
 */
-void ready() {
+void ready(struct pcb* process) {
+	struct processQueueNode* finalQueueNode = readyQueueBeginning->prev;
+	struct processQueueNode* newQueueNode;
+	
+	process->state = READY;
+	newQueueNode->process = process;
 
+	newQueueNode->next = readyQueueBeginning;
+	newQueueNode->prev = finalQueueNode;
+	finalQueueNode->next = newQueueNode;
+	readyQueueBeginning->prev = newQueueNode;
+		
+	printPcbData("final", finalQueueNode);
+	printPcbData("queue", readyQueueBeginning);
+	printPcbData("new", newQueueNode);
 }
 
-/**
-	Removes the next process from the ready queue and 
-	returns an index or a pointer to its process control block
-*/
-struct pcb* next() {/*
-	struct pcb* process = readyQueueBeginning->process;
 
-	if (readyQueueBeginning != readyQueueEnd) {
-		readyQueueBeginning = &readyQueueBeginning->next;
-	}
-
-	kprintf("\nreadyQueueBeginning1: %d; readyQueueBeginning next: %d\n", readyQueueBeginning, readyQueueBeginning->next);
-	kprintf("\nreadyQueueBeginning2: %d\n", readyQueueBeginning);
-	readyQueueBeginning = &readyQueueBeginning->next;
-	return process;*/
+void printPcbData(char* info, struct processQueueNode* node) {
+	kprintf("%s pcb: %d, ->prev: %d, ->next: %d, ->state: %d\n", info,
+		node, node->prev, node->next, node->process->state);
 }

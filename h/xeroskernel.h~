@@ -20,6 +20,20 @@ typedef	char		Bool;		/* Boolean type			*/
 					/*  (usu. defined as ^B)	*/
 #define	BLOCKERR	-5		/* non-blocking op would block	*/
 
+/* Processes */
+#define CREATE		1
+#define YIELD		2
+#define STOP		3
+
+#define RUNNING		1
+#define READY		2
+#define BLOCKED		3
+#define STOPPED		4		
+
+
+/* structures */
+struct pcb;
+
 /* Functions defined by startup code */
 
 

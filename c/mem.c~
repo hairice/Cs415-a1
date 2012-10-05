@@ -60,10 +60,6 @@ void kmeminit(void) {
 
 	kprintf("%d  dataStart %d %d %d %d\n", hdr, &hdr->dataStart, hdr->sanityCheck, sizeof(hdr), hdr->next);
   	kprintf("%d  dataStart %d %d %d\n", hdr2, &hdr2->dataStart, hdr2->sanityCheck, sizeof(struct memHeader));
-	testTraverseFreeList();
-
-	void* memPointer = kmalloc(5);
-	kfree(memPointer);
 	
 	testTraverseFreeList();
 }
