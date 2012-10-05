@@ -34,10 +34,3 @@ void initproc( void )				/* The beginning */
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }
-
-/*
-
-struct freeMemList {
-
-};
-*/

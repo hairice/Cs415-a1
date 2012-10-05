@@ -30,14 +30,7 @@ void initproc( void )				/* The beginning */
 	kmeminit();
 	initializeProcessQueue();
 
-
+	dispatch();
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }
-
-/*
-
-struct freeMemList {
-
-};
-*/
