@@ -92,7 +92,7 @@ void sleep() {
 struct memHeader* createMemHeader(long memLoc) {
 	struct memHeader* hdr;	
 	hdr = (struct memHeader*) (unsigned char*) memLoc;
-	kprintf("createMemHeader: %d\n", hdr);
+	//kprintf("createMemHeader: %d\n", hdr);
 	return hdr;
 }
 
@@ -133,7 +133,7 @@ long getSizeOfSecondFreeMemSlot() {
 	Returns 0 if there is not enough available memory
 */
 void *kmalloc(int size) {
-	kprintf("\n----------KMALLOC(%d)-----------\n", size);
+	//kprintf("\n----------KMALLOC(%d)-----------\n", size);
 
 	if (!isAllocSizeValid(size)) {
 		return -1;
@@ -144,7 +144,7 @@ void *kmalloc(int size) {
 	
 	if (!memAllocationSlot) {
 		// There wasn't a free slot with enough space
-		kprintf("Not enough space to kmalloc()!");
+		//kprintf("Not enough space to kmalloc()!");
 		return 0;
 	}
 
@@ -174,8 +174,8 @@ void *kmalloc(int size) {
 	// Point start of free memory list to the newly free node
 	memSlot = newFreeNode;
 
-	kprintf("previous allocated size: %d\n", previousSize);
-	kprintf("just allocated node loc: %d; size: %d\n", memAllocationSlot, memAllocationSlot->size);
+	//kprintf("previous allocated size: %d\n", previousSize);
+	//kprintf("just allocated node loc: %d; size: %d\n", memAllocationSlot, memAllocationSlot->size);
 	kprintf("new free node loc: %d; size: %d\n", newFreeNode, newFreeNode->size);
 	
 	return memAllocationSlot->dataStart;
@@ -252,7 +252,7 @@ void placeMemInFreeList(struct memHeader *hdr) {
 		hdr->prev = 0;
 		memSlot = hdr;
 	} else {
-		hdr->next = &closestHdr->next;
+		hdr->next = closestHdr->next;
 		closestHdr->next = hdr;
 		hdr->prev = closestHdr;
 		hdr->next->prev = hdr;

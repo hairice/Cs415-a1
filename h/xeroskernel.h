@@ -33,6 +33,7 @@ typedef	char		Bool;		/* Boolean type			*/
 
 /* structures */
 struct pcb;
+struct processQueueNode;
 
 /* Functions defined by startup code */
 
