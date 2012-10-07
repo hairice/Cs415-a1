@@ -1,0 +1,48 @@
+/* ctsw.c : context switcher
+ */
+
+#include <xeroskernel.h>
+
+void contextinit();
+void contextswitch(struct pcb*);
+void _ISREntryPoint();
+
+
+static void *k_stack;
+
+/* Your code goes here - You will need to write some assembly code. You must
+   use the gnu conventions for specifying the instructions. (i.e this is the
+   format used in class and on the slides.) You are not allowed to change the
+   compiler/assembler options or issue directives to permit usage of Intel's
+   assembly language conventions.
+*/
+
+
+void contextinit() {
+	// setEvec(unsigned int xnum, unsigned long handler)
+}
+
+extern int contextswitch(struct pcb* currProcess) { /*
+	static unsigned int ESP;
+	ESP = currProcess->esp;
+	__asm __volatile(
+			" pushf "
+			" pusha "
+			" movl %%esp, k_stack "
+			" movl ESP, %%esp "
+			" popa "
+			" iret "
+
+		" _ISREntryPoint: "
+			" pusha "
+			" movl	%%esp, ESP "
+			" movl	k_stack, %%esp "
+			" popa "
+			" popf "
+		" : "
+		" : "
+		" : %eax "
+	);
+	currProcess->esp = ESP;
+	return ESP;
+*/}

@@ -31,8 +31,11 @@ void initproc( void )				/* The beginning */
 	initializeProcessQueue();
 
 	dispatch();
+<<<<<<< HEAD
 
 	contextinit();
+=======
+>>>>>>> 8bd172adfdc050abc6178022fff84273c218f0cd
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }
