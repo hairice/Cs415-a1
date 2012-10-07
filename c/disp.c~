@@ -4,8 +4,6 @@
 #include <xeroskernel.h>
 
 void initializeProcessQueue();
-void initializeReadyQueue();
-void initializeStoppedQueue();
 void dispatch();
 void syscreate();
 void sysstop();
@@ -13,64 +11,36 @@ void sysyield();
 void ready(struct pcb*);
 struct pcb* next();
 void cleanup(struct pcb*);
-void printPcbData(char*, struct processQueueNode*);
+void printPcbData(char*, struct pcb*);
+void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning);
 
 
 /* Your code goes here */
 
 static struct pcb* currentProcess;
-static struct processQueueNode* readyQueueBeginning;
-static struct processQueueNode* stoppedQueue;
-static struct processQueueNode* pcbTable[0];
-
-
-struct pcb {
-	int pid;
-	int state;
-	int priority;
-	unsigned int esp;
-};
-
-struct processQueueNode {
-	struct processQueueNode* prev;
-	struct processQueueNode* next;
-	struct pcb* process;
-};
+static struct pcb* readyQueue;
+static struct pcb* freeQueue;
+static struct pcb* pcbTable[31];
 
 
 /**
 	Initializes the process ready queue
 */
 void initializeProcessQueue() { 
-	initializeReadyQueue();	
-	initializeStoppedQueue();
+	initializeProcesses();
 }
 
-void initializeReadyQueue() {
-	struct processQueueNode* queueNode = kmalloc(sizeof(struct processQueueNode));
-	struct pcb* process = kmalloc(sizeof(struct pcb));
-	
-	process->state = READY;
-	queueNode->process = process;
-	queueNode->next = queueNode;
-	queueNode->prev = queueNode;
-
-	readyQueueBeginning = queueNode;
-	pcbTable[0] = readyQueueBeginning;
-	
-	printPcbData("queue", readyQueueBeginning);
+void initializeProcesses() {
+	pcbTable[0] = kmalloc(sizeof(struct pcb));
+	pcbTable[0]->next = pcbTable[0];
+	pcbTable[0]->prev = pcbTable[0];
+	freeQueue = pcbTable[0];
+	int i;
+	for (i = 1; i < 32; i++) {
+		pcbTable[i] = kmalloc(sizeof(struct pcb));
+		insertNodeAtEndOfQueue(pcbTable[i], freeQueue);
+	}
 }
-
-void initializeStoppedQueue() {
-	struct processQueueNode* queueNode = kmalloc(sizeof(struct processQueueNode));
-		
-	queueNode->next = queueNode;
-	queueNode->prev = queueNode;
-	queueNode->process = 0;
-	
-	stoppedQueue = queueNode;
-}
-
 
 void dispatch() { 
 	struct pcb* process = next();
@@ -90,11 +60,11 @@ void dispatch() {
 	returns an index or a pointer to its process control block
 */
 struct pcb* next() {
-	struct pcb* process = readyQueueBeginning->process;
+	struct pcb* process = readyQueue;
 	kprintf("\n------ DISPATCH NEXT ------\n");
-	kprintf("\nreadyQueueBeginning1: %d; readyQueueBeginning next: %d\n", readyQueueBeginning, readyQueueBeginning->next);
+	kprintf("\nreadyQueue1: %d; readyQueue next: %d\n", readyQueue, readyQueue->next);
 	
-	readyQueueBeginning = readyQueueBeginning->next;
+	readyQueue = readyQueue->next;
 	return process;
 }
 
@@ -103,28 +73,16 @@ struct pcb* next() {
 	adds it to the ready queue
 */
 void ready(struct pcb* process) {
-	struct processQueueNode* newQueueNode = kmalloc(sizeof(struct processQueueNode));
-	
-	process->state = READY;
-	newQueueNode->process = process;
+	printPcbData("queue", readyQueue);
+	insertNodeAtEndOfQueue(process, readyQueue);
 
-	printPcbData("queue", readyQueueBeginning);
-
-	insertNodeAtEndOfQueue(newQueueNode, readyQueueBeginning);
-
-	//printPcbData("queue", readyQueueBeginning);
+	//printPcbData("queue", readyQueue);
 	//printPcbData("new", newQueueNode);
 }
 
 void cleanup(struct pcb* process) {
-	process->state = STOPPED;
-	if (!stoppedQueue->process) {
-		stoppedQueue->process = process;
-	} else {
-		struct processQueueNode* queueNode;
-		queueNode->process = process;
-		insertNodeAtEndOfQueue(queueNode, stoppedQueue);
-	}
+	kfree(process->stack);
+	insertNodeAtEndOfQueue(process, freeQueue);
 }
 
 void syscreate() {
@@ -141,15 +99,15 @@ void sysyield() {
 
 
 
-void insertNodeAtEndOfQueue(struct processQueueNode* node, struct processQueueNode* queueBeginning) {
-	struct processQueueNode* finalQueueNode = queueBeginning->prev;
+void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
+	struct pcb* finalQueueNode = queueBeginning->prev;
 	node->next = queueBeginning;
 	node->prev = finalQueueNode;
 	finalQueueNode->next = node;
 	queueBeginning->prev = node;
 }
 
-void printPcbData(char* info, struct processQueueNode* node) {
-	kprintf("%s pcb: %d, ->prev: %d, ->next: %d, ->state: %d\n", info,
-		&node, node->prev, node->next, node->process->state);
+void printPcbData(char* info, struct pcb* node) {
+	kprintf("%s pcb: %d, ->prev: %d, ->next: %d, ->stackSize: %d\n", info,
+		&node, node->prev, node->next, node->stack->size);
 }

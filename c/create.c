@@ -9,13 +9,7 @@ struct pcb* allocatePcb();
 
 
 extern struct pcb;
-struct processStack {
-	int size;
-	unsigned short cs;
-	unsigned char dataStart[0];
-};
-
-static int processCount = 0;
+extern struct processStack;
 
 /**
 	Takes two parameters, a reference (function pointer) to the start 
@@ -28,7 +22,7 @@ int create(void (*func)(), int stackSize) {
 	struct pcb* process = kmalloc(sizeof(struct pcb));
 	
 	// Allocate the stack using kmalloc()
-	struct procesStack* stack = kmalloc(stackSize + sizeof(struct processStack));
+	struct processStack* stack = kmalloc(stackSize + sizeof(struct processStack));
 	
 	// Initialize the pcb and the stack
 	stack->size = stackSize;
@@ -38,5 +32,6 @@ int create(void (*func)(), int stackSize) {
 	ready(process);
 
 	//TODO: pid?
-	return processCount++;
+	kprintf("int process: %d\n", (int) process);
+	return (int) process;
 }

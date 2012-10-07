@@ -32,17 +32,19 @@ typedef	char		Bool;		/* Boolean type			*/
 
 
 /* structures */
+struct processStack {
+        int size;
+        unsigned short cs;
+        unsigned char dataStart[0];
+};
 struct pcb {
 	int pid;
-	int state;
-	int priority;
-	unsigned int esp;
-	
+	struct processStack* stack;
+	struct pcb* next;
+	struct pcb* prev;
 };
 
 struct processQueueNode;
-struct processStack;
-struct processStack;
 
 /* Functions defined by startup code */
 
