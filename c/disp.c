@@ -4,6 +4,7 @@
 #include <xeroskernel.h>
 
 void initializeProcessQueue();
+void initializeQueue(int index, struct pcb* queue);
 void dispatch();
 void syscreate();
 void sysstop();
@@ -31,27 +32,39 @@ void initializeProcessQueue() {
 }
 
 void initializeProcesses() {
-	pcbTable[0] = kmalloc(sizeof(struct pcb));
-	pcbTable[0]->next = pcbTable[0];
-	pcbTable[0]->prev = pcbTable[0];
-	freeQueue = pcbTable[0];
-	int i;
+	initializeQueue(0, readyQueue);
+	initializeQueue(1, freeQueue);
+
+/*	int i;
 	for (i = 1; i < 32; i++) {
 		pcbTable[i] = kmalloc(sizeof(struct pcb));
+		pcbTable[i]->pid = i;
 		insertNodeAtEndOfQueue(pcbTable[i], freeQueue);
 	}
+*/
 }
 
-void dispatch() { 
+void initializeQueue(int index, struct pcb* queue) {
+	pcbTable[index] = kmalloc(sizeof(struct pcb));
+	pcbTable[index]->next = pcbTable[index];
+	pcbTable[index]->prev = pcbTable[index];
+	pcbTable[index]->pid = index;
+	readyQueue = pcbTable[index];
+}
+
+void dispatch() { 	
+	kprintf("d");
 	struct pcb* process = next();
-	for( ;; ) {
-		//short request = contextswitch( process );
-		short request = CREATE;
+	int request;
+	for( ;; ) {	
+		request = contextswitch(process);
+		//short request = CREATE;
 		switch(request) {
-			case(CREATE): create(currentProcess, 16); break;
+			case(CREATE): create(currentProcess, 128); break;
 			case(YIELD): ready(process); process = next(); break;
 			case(STOP): cleanup(process); process = next(); break;
 		}
+		kprintf("D");
 	}
 }
 
@@ -61,8 +74,8 @@ void dispatch() {
 */
 struct pcb* next() {
 	struct pcb* process = readyQueue;
-	kprintf("\n------ DISPATCH NEXT ------\n");
-	kprintf("\nreadyQueue1: %d; readyQueue next: %d\n", readyQueue, readyQueue->next);
+	//kprintf("\n------ DISPATCH NEXT ------\n");
+	//kprintf("\nreadyQueue1: %d; readyQueue next: %d\n", readyQueue, readyQueue->next);
 	
 	readyQueue = readyQueue->next;
 	return process;
@@ -73,7 +86,7 @@ struct pcb* next() {
 	adds it to the ready queue
 */
 void ready(struct pcb* process) {
-	printPcbData("queue", readyQueue);
+	//printPcbData("queue", readyQueue);
 	insertNodeAtEndOfQueue(process, readyQueue);
 
 	//printPcbData("queue", readyQueue);
@@ -108,6 +121,6 @@ void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
 }
 
 void printPcbData(char* info, struct pcb* node) {
-	kprintf("%s pcb: %d, ->prev: %d, ->next: %d, ->stackSize: %d\n", info,
-		&node, node->prev, node->next, node->stack->size);
+	kprintf("%s pcb: %d, ->prev: %d, ->next: %d\n", info,
+		&node, node->prev, node->next);
 }

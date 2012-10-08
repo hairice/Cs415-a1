@@ -4,7 +4,7 @@
 #include <xeroskernel.h>
 
 /* Your code goes here. */
-int create(void (*func)(), int stackSize);
+int create(void (*pfunc)(), int stackSize);
 struct pcb* allocatePcb();
 
 
@@ -17,21 +17,21 @@ extern struct processStack;
 	process. Returns the new process’ pid on success and −1 on failure
 
 */
-int create(void (*func)(), int stackSize) {
+int create(void (*pfunc)(), int stackSize) {
 	// Allocate a free pcb from the process table
-	struct pcb* process = kmalloc(sizeof(struct pcb));
+	struct pcb* pcb = kmalloc(sizeof(struct pcb));
 	
 	// Allocate the stack using kmalloc()
-	struct procesStack* stack = kmalloc(stackSize + sizeof(struct processStack));
+	struct processStack* stack = kmalloc(stackSize + sizeof(struct processStack));
 	
 	// Initialize the pcb and the stack
-	stack->size = stackSize;
+	stack->eip = &pfunc;
 	stack->cs = getCS();
-	process->stack = stack;
+	pcb->stack = stack;
 	// Place the process on the ready queue
-	ready(process);
+	ready(pcb);
 
 	//TODO: pid?
-	kprintf("int process: %d\n", (int) process);
-	return (int) process;
+	kprintf("int process: %d\n", (int) pcb);
+	return (int) pcb;
 }

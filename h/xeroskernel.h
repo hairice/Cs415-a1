@@ -33,7 +33,7 @@ typedef	char		Bool;		/* Boolean type			*/
 
 /* structures */
 struct processStack {
-        int size;
+		int eip;
         unsigned short cs;
         unsigned char dataStart[0];
 };
@@ -69,9 +69,7 @@ extern void sysstop();
 extern void sysyield();
 extern void ready(struct pcb* process);
 
-extern void contextswitch();
+extern int contextswitch(struct pcb*);
 extern void contextinit();
 extern void setEvec(unsigned int, unsigned long);
-extern int create(void (*func)(), int stackSize);
-
-
+extern int create(void (*pfunc)(), int stackSize);
