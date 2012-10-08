@@ -32,22 +32,34 @@ typedef	char		Bool;		/* Boolean type			*/
 
 
 /* structures */
-struct processStack {
-		int eip;
-		long esp;
-        unsigned short cs;
-        unsigned char dataStart[0];
+struct processContext {
+	int edi;
+	int esi;
+	int ebp;
+	int esp;
+	int ebx;
+	int edx;
+	int ecx;
+	int eax;
+	int eip;
+    unsigned short cs;
+	unsigned char eflags;
+    unsigned char dataStart[0];
+	unsigned long size;
 };
 struct pcb {
 	int pid;
-	struct processStack* stack;
+	struct processContext* context;
 	struct pcb* next;
 	struct pcb* prev;
 };
 
+
+/* Global variables... */
+static struct pcb* currentProcess;
+
+
 /* Functions defined by startup code */
-
-
 void bzero(void *base, int cnt);
 void bcopy(const void *src, void *dest, unsigned int n);
 int kprintf(char * fmt, ...);
@@ -63,14 +75,16 @@ extern void *kmalloc(int);
 extern void kfree(void *ptr);
 
 // Dispatcher
-extern void initializeProcessQueue();
+extern void initializeProcesses();
 extern void dispatch();
 extern void syscreate();
 extern void sysstop();
 extern void sysyield();
 extern void ready(struct pcb* process);
+extern struct pcb* getFreeProcess();
+extern struct pcb* getPcbByPid(int pid);
 
 extern int contextswitch(struct pcb*);
 extern void contextinit();
 extern void setEvec(unsigned int, unsigned long);
-extern int create(void (*pfunc)(), int stackSize);
+extern int create(void (*pfunc)(), int contextSize);

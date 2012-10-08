@@ -11,7 +11,8 @@ extern int set_evec(int, long);
 
 
 static void *k_stack;
-static unsigned int ESP;
+static int ESP;
+static int systemCallType;
 
 /* Your code goes here - You will need to write some assembly code. You must
    use the gnu conventions for specifying the instructions. (i.e this is the
@@ -21,17 +22,23 @@ static unsigned int ESP;
 */
 
 void contextinit() {
-	// setEvec(unsigned int xnum, unsigned long handler)
-	//set_evec(58);
+	setEvec(57, &_ISREntryPoint);
 }
 
 
-extern int contextswitch(struct pcb* currProcess) { 
+extern int contextswitch(struct pcb* process) { 
 	kprintf("c");
 	extern long initsp;
-	ESP = (int) &currProcess->stack;
+	k_stack = initsp;
+	ESP = (int) process->context->esp;
 	kprintf("\nEsp: %d, kstack: %d\n", ESP, k_stack);
-	asm volatile("pushf\n \
+
+	int i;
+	for (i=0; i< 10000000; i++) {
+		;
+	}	
+
+	__asm __volatile("pushf\n \
 		pusha\n \
 		movl %%esp, k_stack\n \
 		movl ESP, %%esp\n \
@@ -40,8 +47,8 @@ extern int contextswitch(struct pcb* currProcess) {
 		\
 		_ISREntryPoint:\n \
 			pusha\n \
-			movl	%%esp, ESP\n \
-			movl	k_stack, %%esp\n \
+			movl %%esp, ESP\n \
+			movl k_stack, %%esp\n \
 			popa\n \
 			popf\n \
 		"
@@ -49,8 +56,8 @@ extern int contextswitch(struct pcb* currProcess) {
 		:
 		: "%eax"
 	);
-	
+
 	kprintf("C");
-//	currProcess->esp = ESP;
+	process->context->esp = ESP;
 	return ESP;
 }

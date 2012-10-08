@@ -28,14 +28,11 @@ void initproc( void )				/* The beginning */
 	kprintf( "\n\nCPSC 415, 2012W1 \n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end );
 
 	kmeminit();
-	initializeProcessQueue();
-
-	dispatch();
-<<<<<<< HEAD
-
+	initializeProcesses();
+	kprintf("Initializing contexts\n");
 	contextinit();
-=======
->>>>>>> 8bd172adfdc050abc6178022fff84273c218f0cd
+	dispatch();
+
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }

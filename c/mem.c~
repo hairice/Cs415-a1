@@ -39,8 +39,6 @@ void kmeminit(void) {
 	unsigned char* memStart = (unsigned char*) freemem;
 	struct memHeader *hdr, *hdr2;
 
-
-	// You are having address issues.
 	hdr = createMemHeader(freemem);
 	hdr->size = (unsigned long) getSizeOfFirstFreeMemSlot();
 	hdr->prev = 0;
@@ -54,14 +52,14 @@ void kmeminit(void) {
 
 	hdr->next = hdr2;
 	memSlot = hdr;
-	kprintf("\nmemSlot: %d\n", memSlot);
-	kprintf("\nFreemem: %d\n", freemem);
-	kprintf("\nsize of memHeader: %d; holesize: %d\n", sizeof(struct memHeader), HOLEEND - HOLESTART);
+//	kprintf("\nmemSlot: %d\n", memSlot);
+//	kprintf("\nFreemem: %d\n", freemem);
+//	kprintf("\nsize of memHeader: %d; holesize: %d\n", sizeof(struct memHeader), HOLEEND - HOLESTART);
 
-	kprintf("%d  dataStart %d %d %d %d\n", hdr, &hdr->dataStart, hdr->sanityCheck, sizeof(hdr), hdr->next);
-  	kprintf("%d  dataStart %d %d %d\n", hdr2, &hdr2->dataStart, hdr2->sanityCheck, sizeof(struct memHeader));
+//	kprintf("%d  dataStart %d %d %d %d\n", hdr, &hdr->dataStart, hdr->sanityCheck, sizeof(hdr), hdr->next);
+//  	kprintf("%d  dataStart %d %d %d\n", hdr2, &hdr2->dataStart, hdr2->sanityCheck, sizeof(struct memHeader));
 	
-	testTraverseFreeList();
+//	testTraverseFreeList();
 }
 
 void testTraverseFreeList() {
@@ -102,7 +100,7 @@ struct memHeader* createMemHeader(long memLoc) {
 long getSizeOfFirstFreeMemSlot() {
 	extern long freemem;
 	long size = HOLESTART - freemem - sizeof(struct memHeader);
-	kprintf("Holestart: %d; Size of first free mem slot: %d\n", HOLESTART, size);
+	//kprintf("Holestart: %d; Size of first free mem slot: %d\n", HOLESTART, size);
 	return size;
 }
 
@@ -111,7 +109,7 @@ long getSizeOfFirstFreeMemSlot() {
 */
 unsigned long getDataEndOfMemNode(struct memHeader* mem) {
 	unsigned long endAddr = ((long) &mem->dataStart) + mem->size;
-	kprintf("mem size: %d; mem: %d; Mem node end addr: %d\n", mem->size, mem, endAddr);	
+	//kprintf("mem size: %d; mem: %d; Mem node end addr: %d\n", mem->size, mem, endAddr);	
 	return endAddr;
 }
 
@@ -176,7 +174,7 @@ void *kmalloc(int size) {
 
 	//kprintf("previous allocated size: %d\n", previousSize);
 	//kprintf("just allocated node loc: %d; size: %d\n", memAllocationSlot, memAllocationSlot->size);
-	kprintf("new free node loc: %d; size: %d\n", newFreeNode, newFreeNode->size);
+//	kprintf("new free node loc: %d; size: %d\n", newFreeNode, newFreeNode->size);
 	
 	return memAllocationSlot->dataStart;
 }
@@ -234,7 +232,7 @@ void kfree(void *ptr) {
 		kprintf("sanityCheck1: %d; sanityCheck2: %d\n", sanityCheck1, sanityCheck2);
 	}
 
-	kprintf("Freeing %d bytes\n", hdr->size);
+	//kprintf("Freeing %d bytes\n", hdr->size);
 
 	placeMemInFreeList(ptr);
 }
@@ -244,7 +242,7 @@ void kfree(void *ptr) {
 */
 void placeMemInFreeList(struct memHeader *hdr) {
 	struct memHeader* closestHdr = getClosestHdrFromFreeList(hdr);
-	kprintf("Free mem list: hdr: %d; closest: %d\n", hdr, closestHdr);
+	//kprintf("Free mem list: hdr: %d; closest: %d\n", hdr, closestHdr);
 	if ((long) closestHdr > (long) hdr) {
 		// This should only happen if hdr is before the beginning of the free list
 		hdr->next = closestHdr;
@@ -272,7 +270,7 @@ struct memHeader* getClosestHdrFromFreeList(struct memHeader* hdr) {
 	struct memHeader* currentHdr = memSlot;
 	struct memHeader* closestPrecedingHdr = currentHdr;
 	long hdrAddress = (long) hdr;
-	kprintf("getting closest: hdr: %d; memslot: %d; current: %d; closest: %d\n", hdr, memSlot, currentHdr, closestPrecedingHdr);
+	//kprintf("getting closest: hdr: %d; memslot: %d; current: %d; closest: %d\n", hdr, memSlot, currentHdr, closestPrecedingHdr);
 
 	while (((long) closestPrecedingHdr->next < hdrAddress) && currentHdr->next) {
 		//kprintf("iterating: header: %d\n", currentHdr);
@@ -281,8 +279,8 @@ struct memHeader* getClosestHdrFromFreeList(struct memHeader* hdr) {
 	}
 
 	//kprintf("iterating: final: %d\n", currentHdr);
-	kprintf("Selected %d for the header at %d. Its size is: %d\n", 
-		closestPrecedingHdr, hdr, closestPrecedingHdr->size);
+	//kprintf("Selected %d for the header at %d. Its size is: %d\n", 
+	//	closestPrecedingHdr, hdr, closestPrecedingHdr->size);
 	
 	return closestPrecedingHdr;
 

@@ -9,7 +9,7 @@ struct pcb* allocatePcb();
 
 
 extern struct pcb;
-extern struct processStack;
+extern struct processContext;
 
 /**
 	Takes two parameters, a reference (function pointer) to the start 
@@ -18,20 +18,40 @@ extern struct processStack;
 
 */
 int create(void (*pfunc)(), int stackSize) {
-	// Allocate a free pcb from the process table
-	struct pcb* pcb = kmalloc(sizeof(struct pcb));
-	
+	struct pcb* pcb = getFreeProcess();
+
 	// Allocate the stack using kmalloc()
-	struct processStack* stack = kmalloc(stackSize + sizeof(struct processStack));
+	struct processContext* context = kmalloc(stackSize + sizeof(struct processContext));
+	context->size = stackSize;
 	
 	// Initialize the pcb and the stack
-	stack->eip = &pfunc;
-	stack->cs = getCS();
-	pcb->stack = stack;
+	context->eip = (int) pfunc;
+	initializeContext(context);
+	pcb->context = context;
 	// Place the process on the ready queue
 	ready(pcb);
 
-	//TODO: pid?
-	kprintf("int process: %d\n", (int) pcb);
-	return (int) pcb;
+	return pcb->pid;
+}
+
+void initializeContext(struct processContext* context) {
+	kprintf("Initializing Process!\n");
+	context->edi = 0;
+	context->esi = 0;
+	context->ebp = (int) context->dataStart;
+	context->esp = (int) context->dataStart;
+	context->ebx = 0;
+	context->edx = 0;
+	context->ecx = 0;
+	context->eax = 0;
+
+	context->cs = getCS();
+	context->eflags = 0;
+	printContext("created context", context);
+}
+
+void printContext(char* msg, struct processContext* context) {
+	kprintf("%s: edi: %d esi: %d ebp: %d esp: %d ebx: %d edx: %d ecx: %d eax: %d eip: %d\n", msg, 
+	context->edi, context->esi, context->ebp, context->esp, context->ebx,
+	context->edx, context->ecx, context->eax, context->eip); 
 }
