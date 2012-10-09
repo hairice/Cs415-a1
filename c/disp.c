@@ -8,9 +8,6 @@ void initializePcbTable();
 void initializeFreeQueue();
 void initializeReadyQueue();
 void dispatch();
-void syscreate();
-void sysstop();
-void sysyield();
 void ready(struct pcb*);
 struct pcb* next();
 void cleanup(struct pcb*);
@@ -35,11 +32,6 @@ extern void initializeProcesses() {
 	printPcbData("ready", readyQueue);
 	
 	initializePcbTable();
-	
-	printPcbData("readyQueue", readyQueue);
-	create(readyQueue, 128);
-	
-	kprintf("Processes initialized!\n");
 }
 
 
@@ -50,7 +42,7 @@ void initializeReadyQueue() {
 	pcb->pid = 0;
 	pcbTable[0] = pcb;
 	readyQueue = pcbTable[0];
-	create(pcb, 128);
+	create(pcb, 256);
 }
 
 void initializeFreeQueue() {
@@ -78,12 +70,12 @@ void initializePcbTable() {
 void dispatch() {
 	kprintf("d");
 	struct pcb* process = next();
-	int request;
-	for( ;; ) {	
-		request = contextswitch(process);
-		//short request = CREATE;
+	for( ;; ) {
+		printContext("\ndispatch", process->context);
+		int request;
+		request = contextswitch();
 		switch(request) {
-			case(CREATE): create(currentProcess, 128); break;
+			case(CREATE): create(&root, 128); break;
 			case(YIELD): ready(process); process = next(); break;
 			case(STOP): cleanup(process); process = next(); break;
 		}
@@ -123,26 +115,16 @@ void cleanup(struct pcb* process) {
 extern struct pcb* getFreeProcess() {
 	struct pcb* freeNode = freeQueue;
 	freeQueue = freeQueue->next;
-	return freeNode;
+	if (freeNode) {
+		return freeNode;
+	} else {
+		return 0;
+	}
 }
 
 extern struct pcb* getPcbByPid(int pid) {
 	return pcbTable[pid];
 }
-
-void syscreate() {
-	
-}
-
-void sysstop() {
-
-}
-
-void sysyield() {
-	
-}
-
-
 
 void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
 	struct pcb* finalQueueNode = queueBeginning->prev;

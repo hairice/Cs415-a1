@@ -29,8 +29,8 @@ void initproc( void )				/* The beginning */
 
 	kmeminit();
 	initializeProcesses();
-	kprintf("Initializing contexts\n");
 	contextinit();
+	createRootProcess();
 	dispatch();
 
         /* This code should never be reached after you are done */

@@ -33,19 +33,18 @@ typedef	char		Bool;		/* Boolean type			*/
 
 /* structures */
 struct processContext {
-	int edi;
-	int esi;
-	int ebp;
-	int esp;
-	int ebx;
-	int edx;
-	int ecx;
-	int eax;
-	int eip;
-    unsigned short cs;
-	unsigned char eflags;
-    unsigned char dataStart[0];
-	unsigned long size;
+	unsigned int edi;
+	unsigned int esi;
+	unsigned int ebp;
+	unsigned int esp;
+	unsigned int ebx;
+	unsigned int edx;
+	unsigned int ecx;
+	unsigned int eax;
+
+	unsigned int eip;
+    unsigned int cs;
+	unsigned int eflags;
 };
 struct pcb {
 	int pid;
@@ -77,14 +76,27 @@ extern void kfree(void *ptr);
 // Dispatcher
 extern void initializeProcesses();
 extern void dispatch();
-extern void syscreate();
-extern void sysstop();
-extern void sysyield();
 extern void ready(struct pcb* process);
 extern struct pcb* getFreeProcess();
 extern struct pcb* getPcbByPid(int pid);
 
-extern int contextswitch(struct pcb*);
+/* Context */
+extern int contextswitch();
 extern void contextinit();
 extern void setEvec(unsigned int, unsigned long);
 extern int create(void (*pfunc)(), int contextSize);
+
+/* Syscall */
+extern int syscall(int call, ...);
+extern int syscreate( void (*func)(), int stack );
+extern void sysyield( void );
+extern void sysstop( void );
+
+/* User */
+extern void createRootProcess();
+extern void root( void );
+
+
+/* Debug */
+extern void trap2(int inum); // evec.c
+extern void printContext(char* msg, struct processContext* context); // create.c
