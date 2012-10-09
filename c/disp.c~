@@ -15,7 +15,7 @@ extern struct pcb* getFreeProcess();
 extern struct pcb* getPcbByPid(int pid);
 void printPcbData(char*, struct pcb*);
 void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning);
-
+extern void root(void);
 
 /* Your code goes here */
 
@@ -29,55 +29,46 @@ extern void initializeProcesses() {
 	initializeFreeQueue();
 	
 	printPcbData("\nfree", freeQueue);
-	printPcbData("ready", readyQueue);
 	
 	initializePcbTable();
 }
 
-
 void initializeReadyQueue() {
-	struct pcb* pcb = (struct pcb*) kmalloc(sizeof(struct pcb));
-	pcb->next = pcb;
-	pcb->prev = pcb;
-	pcb->pid = 0;
-	pcbTable[0] = pcb;
-	readyQueue = pcbTable[0];
-	create(pcb, 256);
+	readyQueue->next = 0;
+	readyQueue->prev = 0;
+	readyQueue = 0;
 }
 
 void initializeFreeQueue() {
 	struct pcb* pcb = (struct pcb*) kmalloc(sizeof(struct pcb));
 	pcb->next = pcb;
 	pcb->prev = pcb;
-	pcb->pid = 1;
+	pcb->pid = 0;
 	freeQueue = pcb;
-	pcbTable[1] = pcb;
+	pcbTable[0] = pcb;
 }
 
 void initializePcbTable() {
 	int i;
-	for (i = 2; i < 32; i++) {
-		kprintf("%d", i);		
+	for (i = 1; i < 32; i++) {
 		pcbTable[i] = (struct pcb*) kmalloc(sizeof(struct pcb));
-		kprintf("a");
 		pcbTable[i]->pid = i;
-		kprintf("p");
 		insertNodeAtEndOfQueue(pcbTable[i], freeQueue);
-		kprintf("i ");
 	}
 }
 
 void dispatch() {
 	kprintf("d");
 	struct pcb* process = next();
-	int request;
+	kprintf("Got the next process\n");
 	for( ;; ) {
 		printContext("\ndispatch", process->context);
-		request = contextswitch();
+		int request;
+		request = contextswitch(process);
 		switch(request) {
-			case(CREATE): create(&root, 128); break;
-			case(YIELD): ready(process); process = next(); break;
-			case(STOP): cleanup(process); process = next(); break;
+			case(CREATE): kprintf("Creating\n"); syscreate(&root, 256); break;
+			case(YIELD): kprintf("yielding\n"); ready(process); process = next(); break;
+			case(STOP): kprintf("Stopping\n"); cleanup(process); process = next(); break;
 		}
 		kprintf("D");
 	}
@@ -88,11 +79,18 @@ void dispatch() {
 	returns an index or a pointer to its process control block
 */
 struct pcb* next() {
+	traverseQueue("Next ready", readyQueue);
 	struct pcb* process = readyQueue;
-	//kprintf("\n------ DISPATCH NEXT ------\n");
-	//kprintf("\nreadyQueue1: %d; readyQueue next: %d\n", readyQueue, readyQueue->next);
 	
+	if (!process) {
+		kprintf("There were no ready processes :(\n");
+		return 0;
+	}
+
 	readyQueue = readyQueue->next;
+	process->prev = 0;
+	process->next = 0;
+
 	return process;
 }
 
@@ -100,10 +98,17 @@ struct pcb* next() {
 	Takes an index or pointer to a process control block and 
 	adds it to the ready queue
 */
-void ready(struct pcb* process) {
-	if (readyQueue->pid != process->pid) {
+void ready(struct pcb* process) {	
+	if (!(int) readyQueue) {
+		kprintf("Nothing in rdy queue right now\n");		
+		readyQueue = process;
+		process->next = process;
+		process->prev = process;
+	} else {
 		insertNodeAtEndOfQueue(process, readyQueue);
 	}
+
+	traverseQueue("ready Queue", readyQueue);
 	printPcbData("ready queue", readyQueue);
 }
 
@@ -113,6 +118,7 @@ void cleanup(struct pcb* process) {
 }
 
 extern struct pcb* getFreeProcess() {
+	//traverseQueue("free queue", freeQueue);
 	struct pcb* freeNode = freeQueue;
 	freeQueue = freeQueue->next;
 	if (freeNode) {
@@ -127,14 +133,34 @@ extern struct pcb* getPcbByPid(int pid) {
 }
 
 void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
-	struct pcb* finalQueueNode = queueBeginning->prev;
-	node->next = queueBeginning;
-	node->prev = finalQueueNode;
-	finalQueueNode->next = node;
-	queueBeginning->prev = node;
+	if (!(int) queueBeginning) {
+		node->next = node;
+		node->prev = node;
+		queueBeginning = node->next;
+	} else {
+		struct pcb* finalQueueNode = queueBeginning->prev;
+		node->next = queueBeginning;
+		node->prev = finalQueueNode;
+		finalQueueNode->next = node;
+		queueBeginning->prev = node;
+	}
 }
 
 void printPcbData(char* info, struct pcb* node) {
 	kprintf("%s pcb: %d, ->prev: %d, ->next: %d\n", info,
 		node, node->prev, node->next);
+}
+
+void traverseQueue(char* msg, struct pcb* node) {
+	kprintf("%s: ", msg);
+	int i = 0;
+
+	struct pcb* currNode = node;
+	while ((i == 0 || currNode != node) && i < 13) {
+		printPcbData(kprintf("%d", i), currNode);
+		i++;
+		currNode = currNode->next;
+	}
+
+	for (i=0; i < 10000000; i++) ;
 }

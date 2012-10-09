@@ -13,7 +13,8 @@ extern int set_evec(int, long);
 static void *k_stack;
 static int ESP;
 static int systemCallType;
-static int CTSW_INTERRUPT = 57;
+static int CTSW_INTERRUPT = $57;
+static int returnVar;
 
 /* Your code goes here - You will need to write some assembly code. You must
    use the gnu conventions for specifying the instructions. (i.e this is the
@@ -24,47 +25,48 @@ static int CTSW_INTERRUPT = 57;
 
 void contextinit() {
 	kprintf("set_evec\n");
-	setEvec(CTSW_INTERRUPT, &_ISREntryPoint);
+	void (*entryFunc)() = &_ISREntryPoint;
+	setEvec(CTSW_INTERRUPT, entryFunc);
 }
 
 
-extern int contextswitch() { 
+extern int contextswitch(struct pcb* process) { 
 	kprintf("c");
-	struct pcb* process = next();
 	extern long initsp;
-	// k_stack = initsp;
+	k_stack = initsp;
 	ESP = process->context->esp;
 	
 	printContext("\nswitch", process->context);
 	kprintf("ESP: %d\n", ESP);
 
-	int i;
-	for (i=0; i< 20000000; i++) {
-		;
-	}
+	trap2(57);
 
 	// add an int CTSW_INTERRUPT instruction?
-	__asm __volatile(" \
-		pushf\n \
-		pusha\n \
-		movl %%esp, k_stack\n \
-		movl ESP, %%esp\n \
-		popa\n \
-		iret\n \
+	__asm __volatile("\
+		pushf\n\
+		pusha\n\
+		movl %%esp, k_stack\n\
+		movl ESP, %%esp\n\
+		popa\n\
+		iret\n\
 		\
-		_ISREntryPoint:\n \
-			pusha\n \
-			movl %%esp, ESP\n \
-			movl k_stack, %%esp\n \
-			popa\n \
-			popf\n \
+		_ISREntryPoint:\n\
+			pusha\n\
+			movl %%esp, ESP\n\
+			movl k_stack, %%esp\n\
+			movl %%eax, returnVar\n\
+			popa\n\
+			popf\n\
 		"
 		:
 		:
 		: "%eax"
 	);
-	//trap2(CTSW_INTERRUPT);
+
+	trap2(67);
 	kprintf("C");
 	process->context->esp = ESP;
-	return ESP;
+	kprintf("Returning from ctsw: %d", returnVar);
+	//return returnVar;
+	return 2;
 }

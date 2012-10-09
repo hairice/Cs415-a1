@@ -41,7 +41,6 @@ struct processContext {
 	unsigned int edx;
 	unsigned int ecx;
 	unsigned int eax;
-
 	unsigned int eip;
     unsigned int cs;
 	unsigned int eflags;
@@ -81,7 +80,7 @@ extern struct pcb* getFreeProcess();
 extern struct pcb* getPcbByPid(int pid);
 
 /* Context */
-extern int contextswitch(void);
+extern int contextswitch(struct pcb*);
 extern void contextinit();
 extern void setEvec(unsigned int, unsigned long);
 extern int create(void (*pfunc)(), int contextSize);

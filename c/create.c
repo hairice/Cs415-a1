@@ -4,7 +4,7 @@
 #include <xeroskernel.h>
 
 /* Your code goes here. */
-int create(void (*pfunc)(), int stackSize);
+extern int create(void (*pfunc)(), int stackSize);
 struct pcb* allocatePcb();
 
 
@@ -17,11 +17,12 @@ extern struct processContext;
 	process. Returns the new process’ pid on success and −1 on failure
 
 */
-int create(void (*pfunc)(), int stackSize) {
+extern int create(void (*pfunc)(), int stackSize) {
+	kprintf("\nCREATING!!\n");	
 	struct pcb* pcb = getFreeProcess();
-	//struct pcb* pcb = (struct pcb*) pfunc;	
 
 	if (!pcb) {
+		kprintf("No free PCBs :( \n");
 		return -1;
 	}
 
@@ -33,7 +34,11 @@ int create(void (*pfunc)(), int stackSize) {
 	initializeContext(context, stackSize);
 	pcb->context = context;
 	printContext("\nnewly created", pcb->context);
+	printPcbData(pcb);
 	
+	int i;
+	for (i=0; i < 1000000; i++) ;
+
 	// Place the process on the ready queue
 	ready(pcb);
 
@@ -48,10 +53,10 @@ void initializeContext(struct processContext* context, int stackSize) {
 	context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
 	context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
 
-	//context->ebp = (unsigned int) context;
-	//context->esp = (unsigned int) context;
-	//context->ebp = 0;
-	//context->esp = 0;
+//	context->ebp = (unsigned int) context;
+//	context->esp = (unsigned int) context;
+//	context->ebp = 0;
+//	context->esp = 0;
 	
 	context->ebx = 0;
 	context->edx = 0;

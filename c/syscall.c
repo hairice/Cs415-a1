@@ -13,30 +13,42 @@ extern void sysstop( void );
 
 static int CALL;
 static va_list ARGS;
+static int SYSCALL_RETURN;
 
 extern int syscall(int call, ...) {
 	va_list args;
     va_start(args, call);
-	int syscallReturn;
 	CALL = call;
 	ARGS = args;
 
 	kprintf("In syscall!\n");
+	// The int instr doesn't work.
 
-	__asm __volatile("\
-		movl CALL, %%eax \n \
-		movl ARGS, %%edx \n \
-		#int $58 \n \
-		movl %%eax, %0 \n \
-	"
-	: "=r" (syscallReturn)
-	: 
-	: "%eax");
+	switch (call) {
+		case (CREATE): {
+			void* func = va_arg(args, void*);
+			int size = va_arg(args, int);
+			create(func, size);
+			break;
+		}
+		case (YIELD): break;
+		case (STOP): break;
+	} 
 
 	va_end(args);
+	trap2(57);
+	__asm __volatile("\
+		movl CALL, %%eax\n\
+		movl ARGS, %%edx\n\
+		int $57\n\
+		movl %%eax, SYSCALL_RETURN\n\
+	"
+	:
+	: 
+	: "%eax", "%edx");
 
-	kprintf("syscallReturn: %d\n", syscallReturn);	
-	return syscallReturn;
+	kprintf("syscallReturn: %d\n", SYSCALL_RETURN);	
+	return SYSCALL_RETURN;
 }
 
 /**
