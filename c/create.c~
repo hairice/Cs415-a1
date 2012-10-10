@@ -29,31 +29,10 @@ extern int create(void (*pfunc)(), int stackSize) {
 	// Allocate the stack using kmalloc()
 	struct processContext* context = kmalloc(stackSize + sizeof(struct processContext));
 	
-	kprintf("Initializing Process!\n");
-	context->edi = 0;
-	context->esi = 0;
-	
-	context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
-	context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
-
-//	context->ebp = (unsigned int) context;
-//	context->esp = (unsigned int) context;
-//	context->ebp = 0;
-//	context->esp = 0;
-	
-	context->ebx = 0;
-	context->edx = 0;
-	context->ecx = 0;
-	context->eax = 0;
-
-	context->cs = getCS();
-	context->eflags = 0;
-
-
 	// Initialize the pcb and the stack
-	context->eip = pfunc;
-//	initializeContext(context, stackSize);
-	pcb->context = &context;
+	context->eip = &pfunc;
+	initializeContext(context, stackSize);
+	pcb->context = context;
 	printContext("\nnewly created", pcb->context);
 	printPcbData(pcb);
 	
@@ -71,11 +50,11 @@ void initializeContext(struct processContext* context, int stackSize) {
 	context->edi = 0;
 	context->esi = 0;
 	
-	context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
-	context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
+	//context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
+	//context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
 
-//	context->ebp = (unsigned int) context;
-//	context->esp = (unsigned int) context;
+	context->ebp = (unsigned int) context;
+	context->esp = (unsigned int) context;
 //	context->ebp = 0;
 //	context->esp = 0;
 	

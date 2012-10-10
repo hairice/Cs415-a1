@@ -13,7 +13,7 @@ extern int set_evec(int, long);
 static void *k_stack;
 static int ESP;
 static int systemCallType;
-static int CTSW_INTERRUPT = $57;
+static int CTSW_INTERRUPT = 57;
 static int returnVar;
 
 /* Your code goes here - You will need to write some assembly code. You must
@@ -38,8 +38,6 @@ extern int contextswitch(struct pcb* process) {
 	
 	printContext("\nswitch", process->context);
 	kprintf("ESP: %d\n", ESP);
-
-	trap2(57);
 
 	// add an int CTSW_INTERRUPT instruction?
 	__asm __volatile("\

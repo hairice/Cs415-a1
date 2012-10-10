@@ -10,7 +10,7 @@ extern void root( void );
 
 extern void createRootProcess() {
 	kprintf("Creating root process\n");
-	syscreate(&root, 256);
+	create(&root, 256);
 }
 
 extern void root( void ) {

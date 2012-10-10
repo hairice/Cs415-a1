@@ -50,11 +50,11 @@ void initializeContext(struct processContext* context, int stackSize) {
 	context->edi = 0;
 	context->esi = 0;
 	
-	context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
-	context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
+	//context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
+	//context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
 
-//	context->ebp = (unsigned int) context;
-//	context->esp = (unsigned int) context;
+	context->ebp = (unsigned int) context;
+	context->esp = (unsigned int) context;
 //	context->ebp = 0;
 //	context->esp = 0;
 	

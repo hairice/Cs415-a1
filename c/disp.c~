@@ -66,7 +66,10 @@ void dispatch() {
 		int request;
 		request = contextswitch(process);
 		switch(request) {
-			case(CREATE): kprintf("Creating\n"); syscreate(&root, 256); break;
+			case(CREATE): {
+				kprintf("Creating\n"); create(process->context->eip, 256);
+				break;
+			}
 			case(YIELD): kprintf("yielding\n"); ready(process); process = next(); break;
 			case(STOP): kprintf("Stopping\n"); cleanup(process); process = next(); break;
 		}
