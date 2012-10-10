@@ -22,10 +22,10 @@ extern int syscall(int call, ...) {
 	ARGS = args;
 
 	kprintf("In syscall!\n");
-	// The int instr doesn't work.
 
 	switch (call) {
 		case (CREATE): {
+			kprintf("Syscall create\n");
 			void* func = va_arg(args, void*);
 			int size = va_arg(args, int);
 			create(func, size);
@@ -45,7 +45,7 @@ extern int syscall(int call, ...) {
 	"
 	:
 	: 
-	: "%eax", "%edx");
+	: "%eax");
 
 	kprintf("syscallReturn: %d\n", SYSCALL_RETURN);	
 	return SYSCALL_RETURN;

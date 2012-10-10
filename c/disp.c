@@ -34,9 +34,9 @@ extern void initializeProcesses() {
 }
 
 void initializeReadyQueue() {
-	readyQueue->next = 0;
-	readyQueue->prev = 0;
-	readyQueue = 0;
+//	readyQueue->next = 0;
+//	readyQueue->prev = 0;
+//	readyQueue = 0;
 }
 
 void initializeFreeQueue() {
