@@ -19,8 +19,8 @@ extern void createRootProcess() {
 extern void root( void ) {
 	kprintf("\nHello World\n");
 	
-	create(&producer, 256);
-	create(&consumer, 256);
+	syscreate(&producer, 256);
+	syscreate(&consumer, 256);
 
 	for (;;) {
 		sysyield();
@@ -30,7 +30,7 @@ extern void root( void ) {
 void producer() {
 	int i;
 	for (i = 0; i < 12; i++) {
-		kprintf("Happydsfsdf");
+		kprintf("Happy");
 		sysyield();
 	}
 

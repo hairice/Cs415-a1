@@ -25,11 +25,9 @@ extern int syscall(int call, ...) {
 
 	switch (call) {
 		case (CREATE): {
-			kprintf("Syscall create\n");
 			void* func = va_arg(args, void*);
 			int size = va_arg(args, int);
-			create(func, size);
-			break;
+			return create(func, size);
 		}
 		case (YIELD): break;
 		case (STOP): break;

@@ -21,7 +21,7 @@ extern int create(void (*pfunc)(), int stackSize) {
 	kprintf("\nCREATING!!\n");	
 	struct pcb* pcb = getFreeProcess();
 
-	if (!pcb) {
+	if (pcb == 0) {
 		kprintf("No free PCBs :( \n");
 		return -1;
 	}

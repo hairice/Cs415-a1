@@ -26,10 +26,7 @@ static struct pcb* pcbTable[31];
 
 extern void initializeProcesses() {
 	initializeReadyQueue();
-	initializeFreeQueue();
-	
-	printPcbData("\nfree", freeQueue);
-	
+	initializeFreeQueue();	
 	initializePcbTable();
 }
 
@@ -60,9 +57,8 @@ void initializePcbTable() {
 void dispatch() {
 	kprintf("d");
 	struct pcb* process = next();
-	kprintf("Got the next process\n");
 	for( ;; ) {
-		printContext("\ndispatch", process->context);
+		printContext("\ntop of dispatch loop", process->context);
 		int request;
 		request = contextswitch(process);
 		switch(request) {
@@ -82,7 +78,7 @@ void dispatch() {
 	returns an index or a pointer to its process control block
 */
 struct pcb* next() {
-	traverseQueue("Next ready", readyQueue);
+	traverseQueue("Getting next", readyQueue);
 	struct pcb* process = readyQueue;
 	
 	if (!process) {
@@ -90,7 +86,12 @@ struct pcb* next() {
 		return 0;
 	}
 
-	readyQueue = readyQueue->next;
+	if (!readyQueue->next || (readyQueue->next == readyQueue)) {
+		readyQueue = 0;
+	} else {
+		readyQueue = readyQueue->next;
+	}
+	
 	process->prev = 0;
 	process->next = 0;
 
@@ -101,18 +102,25 @@ struct pcb* next() {
 	Takes an index or pointer to a process control block and 
 	adds it to the ready queue
 */
-void ready(struct pcb* process) {	
-	if (!(int) readyQueue) {
-		kprintf("Nothing in rdy queue right now\n");		
-		readyQueue = process;
-		process->next = process;
-		process->prev = process;
-	} else {
-		insertNodeAtEndOfQueue(process, readyQueue);
+void ready(struct pcb* process) {
+	if (process == 0) {
+		kprintf("\n -------- THIS PROCESS IS 0 ---------\n");
 	}
 
-	traverseQueue("ready Queue", readyQueue);
-	printPcbData("ready queue", readyQueue);
+	if (!(int) readyQueue) {
+		kprintf("Nothing in rdy queue right now\n");		
+		process->next = process;
+		process->prev = process;		
+		readyQueue = process;
+		printPcbData("post-empty readyQueue", readyQueue);
+		printPcbData("post-insert node", process);
+	} else {
+		printPcbData("Inserting Node", process);
+		insertNodeAtEndOfQueue(process, readyQueue);
+		printPcbData("just placed in readyQueue", readyQueue);
+	}
+
+	traverseQueue("post-insert traversal", readyQueue);
 }
 
 void cleanup(struct pcb* process) {
@@ -136,10 +144,10 @@ extern struct pcb* getPcbByPid(int pid) {
 }
 
 void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
-	if (!(int) queueBeginning) {
+	if (!queueBeginning) {
 		node->next = node;
 		node->prev = node;
-		queueBeginning = node->next;
+		queueBeginning = node;		
 	} else {
 		struct pcb* finalQueueNode = queueBeginning->prev;
 		node->next = queueBeginning;
@@ -147,6 +155,7 @@ void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
 		finalQueueNode->next = node;
 		queueBeginning->prev = node;
 	}
+	
 }
 
 void printPcbData(char* info, struct pcb* node) {
