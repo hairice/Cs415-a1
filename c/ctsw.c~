@@ -30,15 +30,12 @@ void contextinit() {
 
 
 extern int contextswitch(struct pcb* process) { 
-	kprintf("c");
-	extern long initsp;
-	k_stack = initsp;
+	//kprintf("c");
 	ESP = process->context->esp;
 	
-	printContext("\nswitch", process->context);
-	kprintf("ESP: %d\n", ESP);
+	//printContext("\nswitch", process->context);
+	//kprintf("ESP: %d\n", ESP);
 
-	// add an int CTSW_INTERRUPT instruction?
 	__asm __volatile("\
 		pushf\n\
 		pusha\n\
@@ -60,9 +57,8 @@ extern int contextswitch(struct pcb* process) {
 		: "%eax"
 	);
 
-	kprintf("C");
+	//kprintf("C");
 	process->context->esp = ESP;
-	kprintf("Returning from ctsw: %d\n", returnVar);
+	//kprintf("Returning from ctsw: %d\n", returnVar);
 	return returnVar;
-	//return 2;
 }

@@ -6,6 +6,7 @@
 /* Your code goes here. */
 extern int create(void (*pfunc)(), int stackSize);
 struct pcb* allocatePcb();
+void initializeContext(struct processContext* context, int stackSize);
 
 
 extern struct pcb;
@@ -18,11 +19,11 @@ extern struct processContext;
 
 */
 extern int create(void (*pfunc)(), int stackSize) {
-	kprintf("\nCREATING!!\n");	
+	//kprintf("\nCREATING!!\n");	
 	struct pcb* pcb = getFreeProcess();
 
 	if (pcb == 0) {
-		kprintf("No free PCBs :( \n");
+		//kprintf("No free PCBs :( \n");
 		return -1;
 	}
 
@@ -31,13 +32,18 @@ extern int create(void (*pfunc)(), int stackSize) {
 	
 	// Initialize the pcb and the stack
 	context->eip = pfunc;
-	initializeContext(context, stackSize);
+	initializeContext(context, stackSize);	
+
+//	int stackBeg = (int) context + sizeof(context);
+//	int stackEnd = stackBeg + stackSize;
+
+//	kprintf("Stack beginning: %d; Stack end: %d\n", stackBeg, stackEnd);
+//	kprintf("Location of create routine: %d - %d\n", &create, &initializeContext);
+
 	pcb->context = context;
-	printContext("\nnewly created", pcb->context);
-	printPcbData(pcb);
+	//printContext("\nnewly created", pcb->context);
+	//printPcbData(pcb);
 	
-	int i;
-	for (i=0; i < 1000000; i++) ;
 
 	// Place the process on the ready queue
 	ready(pcb);
@@ -45,13 +51,16 @@ extern int create(void (*pfunc)(), int stackSize) {
 	return pcb->pid;
 }
 
+/**
+	Set the initial values to the given context and with the given stack size
+*/
 void initializeContext(struct processContext* context, int stackSize) {
-	kprintf("Initializing Process!\n");
+	//kprintf("Initializing Process!\n");
 	context->edi = 0;
 	context->esi = 0;
 	
-	//context->ebp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
-	//context->esp = (unsigned int) context + sizeof(struct processContext) + (stackSize * (3/4));
+	//context->ebp = (unsigned int) context + (stackSize * (3/4));
+	//context->esp = (unsigned int) context + (stackSize * (3/4));
 
 	context->ebp = (unsigned int) context;
 	context->esp = (unsigned int) context;

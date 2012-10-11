@@ -21,7 +21,7 @@ extern int syscall(int call, ...) {
 	CALL = call;
 	ARGS = args;
 
-	kprintf("In syscall!\n");
+	//kprintf("In syscall!\n");
 
 	switch (call) {
 		case (CREATE): {
@@ -34,7 +34,7 @@ extern int syscall(int call, ...) {
 	} 
 
 	va_end(args);
-	trap2(57);
+
 	__asm __volatile("\
 		movl CALL, %%eax\n\
 		movl ARGS, %%edx\n\
@@ -42,10 +42,10 @@ extern int syscall(int call, ...) {
 		movl %%eax, SYSCALL_RETURN\n\
 	"
 	:
-	: 
+	:
 	: "%eax");
 
-	kprintf("syscallReturn: %d\n", SYSCALL_RETURN);	
+//	kprintf("syscallReturn: %d\n", SYSCALL_RETURN);	
 	return SYSCALL_RETURN;
 }
 
@@ -55,6 +55,7 @@ extern int syscall(int call, ...) {
  	function returns the process ID of the created process.
 */
 extern int syscreate(void (*func)(), int stack) {
+	//printSysCreateLoc();
 	return syscall(CREATE, func, stack);
 }
 
@@ -63,4 +64,8 @@ extern void sysyield(void) {
 }
 extern void sysstop(void) {
 	syscall(STOP);
+}
+
+void printSysCreateLoc() {
+	kprintf("syscreate: %d - %d\n", &syscreate, &sysyield);
 }

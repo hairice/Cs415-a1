@@ -12,17 +12,23 @@ extern void consumer();
 
 
 extern void createRootProcess() {
-	kprintf("Creating root process\n");
-	create(&root, 256);
+	//kprintf("Creating root process\n");
+	void (*rootProcess)() = &root;
+	create(rootProcess, 256);
 }
 
 extern void root( void ) {
 	kprintf("\nHello World\n");
-	
+
+//	kprintf("Creating producer\n");
 	syscreate(&producer, 256);
+
+//	kprintf("Creating consumer\n");
 	syscreate(&consumer, 256);
 
 	for (;;) {
+//		kprintf("\nProducer(): %d; Consumer(): %d\n", &producer, &consumer);
+//		kprintf("Root Yielding\n");
 		sysyield();
 	}
 }
@@ -30,11 +36,9 @@ extern void root( void ) {
 void producer() {
 	int i;
 	for (i = 0; i < 12; i++) {
-		kprintf("Happy");
+		kprintf("Happy\n");
 		sysyield();
 	}
-
-	for (i= 0; i < 10000000; i++);
 
 	sysstop();
 }
@@ -42,7 +46,7 @@ void producer() {
 void consumer() {
 	int i;
 	for (i = 0; i < 15; i++) {
-		kprintf("New Year");
+		kprintf("New Year\n");
 		sysyield();
 	}
 

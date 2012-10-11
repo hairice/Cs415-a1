@@ -27,10 +27,21 @@ void initproc( void )				/* The beginning */
 {
 	kprintf( "\n\nCPSC 415, 2012W1 \n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end );
 
+	//kprintf("Application code beginning: %d\n", &initproc);
+
+	extern long initsp;
+	extern long freemem;
+
 	kmeminit();
-	initializeProcesses();
+	//testKmalloc();
+
 	contextinit();
-	createRootProcess();
+	initializeProcesses();
+	/createRootProcess();
+	
+	//kprintf("initsp: %d\n", initsp);
+	//kprintf("freemem: %d\n", freemem);
+
 	dispatch();
 
         /* This code should never be reached after you are done */

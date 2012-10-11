@@ -71,6 +71,8 @@ unsigned char inb(unsigned int);
 extern void kmeminit(void);
 extern void *kmalloc(int);
 extern void kfree(void *ptr);
+extern void testKmalloc();
+extern void testMemInit();
 
 // Dispatcher
 extern void initializeProcesses();
