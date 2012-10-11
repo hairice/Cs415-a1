@@ -80,6 +80,7 @@ extern void dispatch();
 extern void ready(struct pcb* process);
 extern struct pcb* getFreeProcess();
 extern struct pcb* getPcbByPid(int pid);
+extern void traverseReadyQueue(char*);
 
 /* Context */
 extern int contextswitch(struct pcb*);

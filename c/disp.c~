@@ -21,6 +21,7 @@ extern void root(void);
 struct pcb* popNodeFromQueue(struct pcb* queueBeginning);
 struct pcb* popNodeFromFreeQueue();
 struct pcb* popNodeFromReadyQueue();
+extern void traverseReadyQueue(char*);
 
 /* Your code goes here */
 
@@ -33,7 +34,7 @@ extern void initializeProcesses() {
 	initializeReadyQueue();
 	initializeFreeQueue();	
 	initializePcbTable();
-	traverseQueue("free queue traversal", freeQueue);
+	//traverseQueue("free queue traversal", freeQueue);
 }
 
 void initializeReadyQueue() {
@@ -102,12 +103,12 @@ void ready(struct pcb* process) {
 		process->next = process;
 		process->prev = process;		
 		readyQueue = process;
-		//printPcbData("post-empty readyQueue", readyQueue);
+		//printPcbData("first node in ready queue post-insert", readyQueue);
 		//printPcbData("post-insert node", process);
 	} else {
 		//printPcbData("Inserting Node", process);
 		insertNodeAtEndOfReadyQueue(process);
-	//	printPcbData("just placed in readyQueue", readyQueue);
+		//printPcbData("first node in readyQueue", readyQueue);
 	}
 
 	//traverseQueue("post-insert traversal", readyQueue);
@@ -276,4 +277,8 @@ void traverseQueue(char* msg, struct pcb* node) {
 	}
 
 	for (i=0; i < 10000000; i++) ;
+}
+
+extern void traverseReadyQueue(char* msg) {
+	traverseQueue(msg, readyQueue);
 }

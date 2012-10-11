@@ -33,11 +33,9 @@ void initproc( void )				/* The beginning */
 	extern long freemem;
 
 	kmeminit();
-	//testKmalloc();
-
 	contextinit();
 	initializeProcesses();
-	/createRootProcess();
+	createRootProcess();
 	
 	//kprintf("initsp: %d\n", initsp);
 	//kprintf("freemem: %d\n", freemem);

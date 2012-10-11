@@ -22,6 +22,8 @@ extern int create(void (*pfunc)(), int stackSize) {
 	//kprintf("\nCREATING!!\n");	
 	struct pcb* pcb = getFreeProcess();
 
+	//printPcbData("Just got this free pcb", pcb);
+
 	if (pcb == 0) {
 		//kprintf("No free PCBs :( \n");
 		return -1;
@@ -40,13 +42,14 @@ extern int create(void (*pfunc)(), int stackSize) {
 //	kprintf("Stack beginning: %d; Stack end: %d\n", stackBeg, stackEnd);
 //	kprintf("Location of create routine: %d - %d\n", &create, &initializeContext);
 
-	pcb->context = context;
-	//printContext("\nnewly created", pcb->context);
-	//printPcbData(pcb);
-	
+	pcb->context = context;	
 
 	// Place the process on the ready queue
 	ready(pcb);
+
+	//printContext("\nnewly created", pcb->context);
+
+	//traverseReadyQueue("ready traversal");
 
 	return pcb->pid;
 }

@@ -33,8 +33,6 @@ void initproc( void )				/* The beginning */
 	extern long freemem;
 
 	kmeminit();
-	//testKmalloc();
-
 	contextinit();
 	initializeProcesses();
 	createRootProcess();
