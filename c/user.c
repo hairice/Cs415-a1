@@ -4,51 +4,44 @@
 #include <xeroskernel.h>
 
 /* Your code goes here */
+ void producer( void ) {
+/****************************/
 
-extern void createRootProcess();
-extern void root( void );
-extern void producer();
-extern void consumer();
+    int         i;
 
+    for( i = 0; i < 5; i++ ) {
+        kprintf( "Produce %d\n", i );
+        sysyield();
+    }
 
-extern void createRootProcess() {
-	//kprintf("Creating root process\n");
-	void (*rootProcess)() = &root;
-	create(rootProcess, 256);
+    sysstop();
 }
 
-extern void root( void ) {
-	kprintf("\nHello World\n");
+ void consumer( void ) {
+/****************************/
 
-//	kprintf("Creating producer\n");
-	syscreate(&producer, 256);
+    int         i;
 
-//	kprintf("Creating consumer\n");
-	syscreate(&consumer, 256);
+    for( i = 0; i < 5; i++ ) {
+        kprintf( "Consume %d \n", i );
+        sysyield();
+    }
 
-	for (;;) {
-//		kprintf("\nProducer(): %d; Consumer(): %d\n", &producer, &consumer);
-//		kprintf("Root Yielding\n");
-		sysyield();
-	}
+    sysstop();
 }
 
-void producer() {
-	int i;
-	for (i = 0; i < 12; i++) {
-		kprintf("Happy\n");
-		sysyield();
-	}
+ void     root( void ) {
+/****************************/
 
-	sysstop();
-}
 
-void consumer() {
-	int i;
-	for (i = 0; i < 15; i++) {
-		kprintf("New Year\n");
-		sysyield();
-	}
+    kprintf("Root has been called\n");
 
-	sysstop();	
+    sysyield();
+    sysyield();
+    syscreate( &producer, 4096 );
+    syscreate( &consumer, 4096 );
+
+    for( ;; ) {
+        sysyield();
+    }
 }

@@ -1,0 +1,302 @@
+/* disp.c : dispatcher
+ */
+
+#include <xeroskernel.h>
+
+void initializeQueue(int index, struct pcb* queue);
+void initializePcbTable();
+void initializeFreeQueue();
+void initializeReadyQueue();
+void dispatch();
+void ready(struct pcb*);
+struct pcb* next();
+void cleanup(struct pcb*);
+extern struct pcb* getFreeProcess();
+extern struct pcb* getPcbByPid(int pid);
+void printPcbData(char*, struct pcb*);
+void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning);
+void insertNodeAtEndOfFreeQueue(struct pcb* node);
+void insertNodeAtEndOfReadyQueue(struct pcb* node);
+extern void root(void);
+struct pcb* popNodeFromQueue(struct pcb* queueBeginning);
+struct pcb* popNodeFromFreeQueue();
+struct pcb* popNodeFromReadyQueue();
+extern void traverseReadyQueue(char*);
+extern void debugSleep();
+
+/* Your code goes here */
+
+static struct pcb* readyQueue;
+static struct pcb* freeQueue;
+static struct pcb* pcbTable[31];
+
+extern void initializeProcesses() {
+    initializeReadyQueue();
+    initializeFreeQueue();
+    initializePcbTable();
+    //traverseQueue("free queue traversal", freeQueue);
+}
+
+void initializeReadyQueue() {
+    readyQueue->next = 0;
+    readyQueue->prev = 0;
+    readyQueue = 0;
+}
+
+void initializeFreeQueue() {
+    struct pcb* pcb = (struct pcb*) kmalloc(sizeof (struct pcb));
+    pcb->next = pcb;
+    pcb->prev = pcb;
+    pcb->pid = 0;
+    pcb->context = 0;
+    freeQueue = pcb;
+    pcbTable[0] = pcb;
+}
+
+void initializePcbTable() {
+    int i;
+    for (i = 1; i < 32; i++) {
+        pcbTable[i] = (struct pcb*) kmalloc(sizeof (struct pcb));
+        pcbTable[i]->pid = i;
+        pcbTable[i]->context = 0;
+        pcbTable[i]->next = 0;
+        pcbTable[i]->prev = 0;
+        insertNodeAtEndOfFreeQueue(pcbTable[i]);
+    }
+}
+
+void dispatch() {
+    //	kprintf("d");
+    struct pcb* process = next();
+    for (;;) {
+        //printContext("\ntop of dispatch loop", process->context);
+        int request;
+        request = contextswitch(process);
+        switch (request) {
+            case(CREATE):
+            {
+                create(process->context->eip, 256);
+                break;
+            }
+            case(YIELD): ready(process);
+                process = next();
+                break;
+            case(STOP): cleanup(process);
+                process = next();
+                break;
+        }
+        //		kprintf("D");
+    }
+}
+
+/**
+        Removes the next process from the ready queue and 
+        returns an index or a pointer to its process control block
+ */
+struct pcb* next() {
+    //traverseQueue("Getting next", readyQueue);
+    return popNodeFromReadyQueue();
+}
+
+/**
+        Takes an index or pointer to a process control block and 
+        adds it to the ready queue
+ */
+void ready(struct pcb* process) {
+    process->state = READY;
+    
+    if (! readyQueue) {
+        //kprintf("Nothing in rdy queue right now\n");		
+        process->next = process;
+        process->prev = process;
+        readyQueue = process;
+        //printPcbData("first node in ready queue post-insert", readyQueue);
+        //printPcbData("post-insert node", process);
+    } else {
+        //printPcbData("Inserting Node", process);
+        insertNodeAtEndOfReadyQueue(process);
+        //printPcbData("first node in readyQueue", readyQueue);
+    }
+
+    //traverseQueue("post-insert traversal", readyQueue);
+}
+
+/**
+        Frees a processes' context and adds the process to the free queue
+ */
+void cleanup(struct pcb* process) {
+    kfree(process->context);
+    insertNodeAtEndOfFreeQueue(process);
+}
+
+/**
+        Returns a free process from the process queue
+ */
+extern struct pcb* getFreeProcess() {
+    //traverseQueue("free queue before pop", freeQueue);
+    struct pcb* freeProcess = popNodeFromFreeQueue();
+    //traverseQueue("free queue after pop", freeQueue);
+    return freeProcess;
+}
+
+/**
+        Given a pid, the corresponding PCB is returned, or -1 if 
+        the pid is invalid
+ */
+extern struct pcb* getPcbByPid(int pid) {
+    if (pid < 32 && pid >= 0) {
+        return pcbTable[pid];
+    } else {
+        return -1;
+    }
+}
+
+// TODO: Why doesn't this abstraction work?
+
+/**
+        Given a pointer to a queue, the function will return the 
+        beginning of that queue.
+ */
+struct pcb* popNodeFromQueue(struct pcb* queueBeginning) {
+    if (!queueBeginning) {
+        return 0;
+    }
+
+    struct pcb* popped = queueBeginning;
+
+    if (!queueBeginning->next || (queueBeginning->next == queueBeginning)) {
+        queueBeginning = 0;
+    } else {
+        struct pcb* finalNode = queueBeginning->prev;
+        queueBeginning = queueBeginning->next;
+        queueBeginning->prev = finalNode;
+        queueBeginning->prev->next = queueBeginning;
+    }
+    popped->next = 0;
+    popped->prev = 0;
+    return popped;
+}
+
+struct pcb* popNodeFromFreeQueue() {
+    struct pcb* popped = freeQueue;
+
+    if (!freeQueue->next || (freeQueue->next == freeQueue)) {
+        freeQueue = 0;
+    } else {
+        struct pcb* finalNode = freeQueue->prev;
+        freeQueue = freeQueue->next;
+        freeQueue->prev = finalNode;
+        freeQueue->prev->next = freeQueue;
+    }
+    popped->next = 0;
+    popped->prev = 0;
+    return popped;
+}
+
+struct pcb* popNodeFromReadyQueue() {
+    struct pcb* popped = readyQueue;
+
+    if (!readyQueue->next || (readyQueue->next == readyQueue)) {
+        readyQueue = 0;
+    } else {
+        struct pcb* finalNode = readyQueue->prev;
+        readyQueue = readyQueue->next;
+        readyQueue->prev = finalNode;
+        readyQueue->prev->next = readyQueue;
+    }
+    popped->next = 0;
+    popped->prev = 0;
+    return popped;
+}
+
+// TODO: Why doesn't this abstraction work?
+
+/**
+        Given a node and a pointer to the beginning of a queue, 
+        the node will be inserted at the end of the queue.
+ */
+void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
+    if (!queueBeginning) {
+        node->next = node;
+        node->prev = node;
+        queueBeginning = node;
+    } else {
+        struct pcb* finalQueueNode = queueBeginning->prev;
+        node->next = queueBeginning;
+        node->prev = finalQueueNode;
+        finalQueueNode->next = node;
+        queueBeginning->prev = node;
+    }
+}
+
+/**
+        The given node will be inserted at the end of the free queue.
+ */
+void insertNodeAtEndOfFreeQueue(struct pcb* node) {
+    if (!freeQueue) {
+        node->next = node;
+        node->prev = node;
+        freeQueue = node;
+    } else {
+        struct pcb* finalQueueNode = freeQueue->prev;
+        node->next = freeQueue;
+        node->prev = finalQueueNode;
+        finalQueueNode->next = node;
+        freeQueue->prev = node;
+    }
+}
+
+/**
+        The given node will be inserted at the end of the ready queue
+ */
+void insertNodeAtEndOfReadyQueue(struct pcb* node) {
+    printPcbData("data", node);
+    
+    if (!readyQueue) {
+        node->next = node;
+        node->prev = node;
+        readyQueue = node;
+    } else {
+        struct pcb* finalQueueNode = readyQueue->prev;
+        node->next = readyQueue;
+        node->prev = finalQueueNode;
+        finalQueueNode->next = node;
+        readyQueue->prev = node;
+    }
+    
+    traverseReadyQueue("Ready queue traverssse!");
+    debugSleep();
+
+}
+
+void printPcbData(char* info, struct pcb* node) {
+    kprintf("%s pcb: %d, ->prev: %d, ->next: %d\n", info,
+            node, node->prev, node->next);
+}
+
+void traverseQueue(char* msg, struct pcb* node) {
+    kprintf("%s: ", msg);
+    int i = 0;
+
+    struct pcb* currNode = node;
+    while ((i == 0 || (int) currNode != (int) node)) {
+        printPcbData(kprintf("%d", i), currNode);
+        i++;
+        currNode = currNode->next;
+
+        if (i % 16 == 0) {
+            debugSleep();
+        }
+    }
+
+    debugSleep();
+}
+
+extern void traverseReadyQueue(char* msg) {
+    traverseQueue(msg, readyQueue);
+}
+
+extern void debugSleep() {
+    int k;
+    for (k = 0; k < 10000000; k++);
+}

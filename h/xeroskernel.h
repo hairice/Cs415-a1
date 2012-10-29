@@ -20,44 +20,9 @@ typedef	char		Bool;		/* Boolean type			*/
 					/*  (usu. defined as ^B)	*/
 #define	BLOCKERR	-5		/* non-blocking op would block	*/
 
-/* Processes */
-#define CREATE		1
-#define YIELD		2
-#define STOP		3
-
-#define RUNNING		1
-#define READY		2
-#define BLOCKED		3
-#define STOPPED		4		
-
-
-/* structures */
-struct processContext {
-	unsigned int edi;
-	unsigned int esi;
-	unsigned int ebp;
-	unsigned int esp;
-	unsigned int ebx;
-	unsigned int edx;
-	unsigned int ecx;
-	unsigned int eax;
-	unsigned int eip;
-    unsigned int cs;
-	unsigned int eflags;
-};
-struct pcb {
-	int pid;
-	struct processContext* context;
-	struct pcb* next;
-	struct pcb* prev;
-};
-
-
-/* Global variables... */
-static struct pcb* currentProcess;
-
-
 /* Functions defined by startup code */
+
+
 void bzero(void *base, int cnt);
 void bcopy(const void *src, void *dest, unsigned int n);
 int kprintf(char * fmt, ...);
@@ -67,38 +32,77 @@ void disable(void);
 void outb(unsigned int, unsigned char);
 unsigned char inb(unsigned int);
 
-// Memory Manager
 extern void kmeminit(void);
-extern void *kmalloc(int);
+extern void *kmalloc(int size);
 extern void kfree(void *ptr);
-extern void testKmalloc();
-extern void testMemInit();
 
-// Dispatcher
-extern void initializeProcesses();
-extern void dispatch();
-extern void ready(struct pcb* process);
-extern struct pcb* getFreeProcess();
-extern struct pcb* getPcbByPid(int pid);
-extern void traverseReadyQueue(char*);
+#define MAX_PROC        64
+#define KERNEL_INT      80
+#define PROC_STACK      (4096 * 4)
 
-/* Context */
-extern int contextswitch(struct pcb*);
-extern void contextinit();
-extern void setEvec(unsigned int, unsigned long);
-extern int create(void (*pfunc)(), int contextSize);
+#define STATE_STOPPED   0
+#define STATE_READY     1
 
-/* Syscall */
-extern int syscall(int call, ...);
-extern int syscreate( void (*func)(), int stack );
-extern void sysyield( void );
-extern void sysstop( void );
+#define SYS_STOP        0
+#define SYS_YIELD       1
+#define SYS_CREATE      2
+#define SYS_TIMER       3
 
-/* User */
-extern void createRootProcess();
-extern void root( void );
+typedef void    (*funcptr)(void);
 
+typedef struct struct_pcb pcb;
+struct struct_pcb {
+    long        esp;
+    pcb         *next;
+    int         state;
+    unsigned int pid;
+    int         ret;
+    long        args;
+};
 
-/* Debug */
-extern void trap2(int inum); // evec.c
-extern void printContext(char* msg, struct processContext* context); // create.c
+extern pcb     proctab[MAX_PROC];
+#pragma pack(1)
+
+typedef struct context_frame {
+  unsigned int        edi;
+  unsigned int        esi;
+  unsigned int        ebp;
+  unsigned int        esp;
+  unsigned int        ebx;
+  unsigned int        edx;
+  unsigned int        ecx;
+  unsigned int        eax;
+  unsigned int        iret_eip;
+  unsigned int        iret_cs;
+  unsigned int        eflags;
+  unsigned int        stackSlots[0];
+} context_frame;
+
+extern pcb      proctab[MAX_PROC];
+
+extern unsigned short getCS(void);
+extern void     kmeminit( void );
+extern void     *kmalloc( int size );
+extern void     dispatch( void );
+extern void     dispatchinit( void );
+extern void     ready( pcb *p );
+extern pcb      *next( void );
+extern void     contextinit( void );
+extern int      contextswitch( pcb *p );
+extern int      create( funcptr fp, int stack );
+extern void     set_evec(unsigned int xnum, unsigned long handler);
+extern int      syscreate( funcptr fp, int stack );
+extern int      sysyield( void );
+extern int      sysstop( void );
+extern unsigned int sysgetpid();
+extern void sysputs(char *str);
+
+extern void     root( void );
+
+void printCF (void * stack);
+
+int syscall(int call, ...);
+/* int syscreate(void (*func)(), int stack); */
+int sysyield(void);
+int sysstop(void);
+

@@ -2,85 +2,60 @@
  */
 
 #include <xeroskernel.h>
+#include <xeroslib.h>
 
-/* Your code goes here. */
-extern int create(void (*pfunc)(), int stackSize);
-struct pcb* allocatePcb();
-void initializeContext(struct processContext* context, int stackSize);
+pcb     proctab[MAX_PROC];
+
+/* make sure interrupts are armed later on in the kernel development  */
+#define STARTING_EFLAGS         0x00003000
+
+static int      nextpid = 1;
 
 
-extern struct pcb;
-extern struct processContext;
 
-/**
-	Takes two parameters, a reference (function pointer) to the start 
-	of the process, and an integer denoting the amount of stack to allocate for the 
-	process. Returns the new process’ pid on success and −1 on failure
+int      create( funcptr fp, int stack ) {
+/***********************************************/
 
-*/
-extern int create(void (*pfunc)(), int stackSize) {
-	//kprintf("\nCREATING!!\n");	
-	struct pcb* pcb = getFreeProcess();
+    context_frame       *cf;
+    pcb                 *p = NULL;
+    int                 i;
 
-	//printPcbData("Just got this free pcb", pcb);
+    if( stack < PROC_STACK ) {
+        stack = PROC_STACK;
+    }
 
-	if (pcb == 0) {
-		//kprintf("No free PCBs :( \n");
-		return -1;
-	}
+    for( i = 0; i < MAX_PROC; i++ ) {
+        if( proctab[i].state == STATE_STOPPED ) {
+            p = &proctab[i];
+            break;
+        }
+    }
 
-	// Allocate the stack using kmalloc()
-	struct processContext* context = kmalloc(stackSize + sizeof(struct processContext));
-	
-	// Initialize the pcb and the stack
-	context->eip = pfunc;
-	initializeContext(context, stackSize);	
+    if( !p ) {
+        return( -1 );
+    }
 
-//	int stackBeg = (int) context + sizeof(context);
-//	int stackEnd = stackBeg + stackSize;
 
-//	kprintf("Stack beginning: %d; Stack end: %d\n", stackBeg, stackEnd);
-//	kprintf("Location of create routine: %d - %d\n", &create, &initializeContext);
+    cf = kmalloc( stack*2);
+    if( !cf ) {
+        return( -1 );
+    }
 
-	pcb->context = context;	
+    cf = (context_frame *)((int)cf + stack - 4);
+    cf--;
 
-	// Place the process on the ready queue
-	ready(pcb);
+    memset(cf, 0x81, sizeof( context_frame ));
 
-	//printContext("\nnewly created", pcb->context);
+    cf->iret_cs = getCS();
+    cf->iret_eip = (unsigned int)fp;
+    cf->eflags = STARTING_EFLAGS;
 
-	//traverseReadyQueue("ready traversal");
+    cf->esp = (int)(cf + 1);
+    cf->ebp = cf->esp;
+    p->esp = (int)cf;
+    p->state = STATE_READY;
+    p->pid = nextpid++;
 
-	return pcb->pid;
-}
-
-/**
-	Set the initial values to the given context and with the given stack size
-*/
-void initializeContext(struct processContext* context, int stackSize) {
-	//kprintf("Initializing Process!\n");
-	context->edi = 0;
-	context->esi = 0;
-	
-	//context->ebp = (unsigned int) context + (stackSize * (3/4));
-	//context->esp = (unsigned int) context + (stackSize * (3/4));
-
-	context->ebp = (unsigned int) context;
-	context->esp = (unsigned int) context;
-//	context->ebp = 0;
-//	context->esp = 0;
-	
-	context->ebx = 0;
-	context->edx = 0;
-	context->ecx = 0;
-	context->eax = 0;
-
-	context->cs = getCS();
-	context->eflags = 0;
-}
-
-extern void printContext(char* msg, struct processContext* context) {
-	kprintf("%s: edi: %d esi: %d ebp: %d esp: %d ebx: %d edx: %d ecx: %d eax: %d eip: %d\n", msg, 
-	context->edi, context->esi, context->ebp, context->esp, context->ebx,
-	context->edx, context->ecx, context->eax, context->eip); 
+    ready( p );
+    return( p->pid );
 }

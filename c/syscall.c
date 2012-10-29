@@ -4,68 +4,53 @@
 #include <xeroskernel.h>
 #include <stdarg.h>
 
-/* Your code goes here */
 
-extern int syscall(int call, ...);
-extern int syscreate( void (*func)(), int stack );
-extern void sysyield( void );
-extern void sysstop( void );
+int syscall( int req, ... ) {
+/**********************************/
 
-static int CALL;
-static va_list ARGS;
-static int SYSCALL_RETURN;
+    va_list     argList;
+    int         rc;
 
-extern int syscall(int call, ...) {
-	va_list args;
-    va_start(args, call);
-	CALL = call;
-	ARGS = args;
+    va_start( argList, req );
 
-	//kprintf("In syscall!\n");
+    __asm __volatile( " \
+        movl %1, %%eax \n\
+        movl %2, %%edx \n\
+        int  %3 \n\
+        movl %%eax, %0 \n\
+        "
+        : "=g" (rc)
+        : "g" (req), "g" (argList), "i" (KERNEL_INT)
+        : "%eax" 
+    );
+ 
+    va_end( argList );
 
-	switch (call) {
-		case (CREATE): {
-			void* func = va_arg(args, void*);
-			int size = va_arg(args, int);
-			return create(func, size);
-		}
-		case (YIELD): break;
-		case (STOP): break;
-	} 
-
-	va_end(args);
-
-	__asm __volatile("\
-		movl CALL, %%eax\n\
-		movl ARGS, %%edx\n\
-		int $57\n\
-		movl %%eax, SYSCALL_RETURN\n\
-	"
-	:
-	:
-	: "%eax");
-
-//	kprintf("syscallReturn: %d\n", SYSCALL_RETURN);	
-	return SYSCALL_RETURN;
+    return( rc );
 }
 
-/**
-	Takes a function pointer denoting the address to start execution at
- 	and an integer that denotes the size of the new process’s stack. The
- 	function returns the process ID of the created process.
-*/
-extern int syscreate(void (*func)(), int stack) {
-	//printSysCreateLoc();
-	return syscall(CREATE, func, stack);
+ int syscreate( funcptr fp, int stack ) {
+/*********************************************/
+
+    return( syscall( SYS_CREATE, fp, stack ) );
 }
 
-extern void sysyield(void) {
-	syscall(YIELD);
-}
-extern void sysstop(void) {
-	syscall(STOP);
+ int sysyield( void ) {
+/***************************/
+
+    return( syscall( SYS_YIELD ) );
 }
 
-void printSysCreateLoc() {
-	kprintf("syscreate: %d - %d\n", &syscreate, &sysyield);
+ int sysstop( void ) {
+/**************************/
+
+    return( syscall( SYS_STOP ) );
 }
+
+ extern unsigned int sysgetpid() {
+     
+ }
+ 
+ extern void sysputs(char *str) {
+     
+ }
