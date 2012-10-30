@@ -58,6 +58,7 @@ struct struct_pcb {
     unsigned int pid;
     int         ret;
     long        args;
+    unsigned int stackSize;
 };
 
 extern pcb     proctab[MAX_PROC];
@@ -95,6 +96,7 @@ extern int      syscreate( funcptr fp, int stack );
 extern int      sysyield( void );
 extern int      sysstop( void );
 extern unsigned int sysgetpid();
+extern unsigned int getCurrentPid();
 extern void sysputs(char *str);
 
 extern void     root( void );

@@ -13,49 +13,55 @@ static int      nextpid = 1;
 
 
 
-int      create( funcptr fp, int stack ) {
+int      create( funcptr fp, int stackSize ) {
 /***********************************************/
 
-    context_frame       *cf;
-    pcb                 *p = NULL;
+    context_frame       *contextFrame;
+    pcb                 *process = NULL;
     int                 i;
 
-    if( stack < PROC_STACK ) {
-        stack = PROC_STACK;
+    if( stackSize < PROC_STACK ) {
+        stackSize = PROC_STACK;
     }
 
     for( i = 0; i < MAX_PROC; i++ ) {
         if( proctab[i].state == STATE_STOPPED ) {
-            p = &proctab[i];
+            process = &proctab[i];
             break;
         }
     }
 
-    if( !p ) {
+    if( !process ) {
         return( -1 );
     }
 
 
-    cf = kmalloc( stack*2);
-    if( !cf ) {
+    contextFrame = kmalloc(stackSize * 2);
+    if( !contextFrame ) {
         return( -1 );
     }
 
-    cf = (context_frame *)((int)cf + stack - 4);
-    cf--;
+    contextFrame = (context_frame *)((int)contextFrame + stackSize - 4);
+    contextFrame--;
 
-    memset(cf, 0x81, sizeof( context_frame ));
+    memset(contextFrame, 0x81, sizeof( context_frame ));
 
-    cf->iret_cs = getCS();
-    cf->iret_eip = (unsigned int)fp;
-    cf->eflags = STARTING_EFLAGS;
+    contextFrame->iret_cs = getCS();
+    contextFrame->iret_eip = (unsigned int)fp;
+    contextFrame->eflags = STARTING_EFLAGS;
+    
 
-    cf->esp = (int)(cf + 1);
-    cf->ebp = cf->esp;
-    p->esp = (int)cf;
-    p->state = STATE_READY;
-    p->pid = nextpid++;
+    contextFrame->esp = (int)(contextFrame + 1);
+    contextFrame->ebp = contextFrame->esp;
+    process->esp = (int)contextFrame;
+    process->state = STATE_READY;
+    process->pid = nextpid++;
+    
+    // TODO: Do I need to subtract the context size or anything?
+/*
+    process->stackSize = stackSize;
+*/
 
-    ready( p );
-    return( p->pid );
+    ready( process );
+    return( process->pid );
 }

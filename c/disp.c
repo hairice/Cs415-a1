@@ -6,83 +6,114 @@
 #include <stdarg.h>
 
 
-static pcb      *head = NULL;
-static pcb      *tail = NULL;
+void updateCurrentProcess(pcb* process);
 
-void     dispatch( void ) {
-/********************************/
+static pcb *readyHead = NULL;
+static pcb *readyTail = NULL;
+static pcb* currentProcess = NULL;
 
-    pcb         *p;
-    int         r;
-    funcptr     fp;
-    int         stack;
-    va_list     ap;
+void dispatch(void) {
+    /********************************/
 
-    for( p = next(); p; ) {
-      //      kprintf("Process %x selected stck %x\n", p, p->esp);
+    pcb *pcb;
+    int ctswNumber;
+    funcptr fp;
+    int stack;
+    va_list args;
 
-      r = contextswitch( p );
-      switch( r ) {
-      case( SYS_CREATE ):
-        ap = (va_list)p->args;
-        fp = (funcptr)(va_arg( ap, int ) );
-        stack = va_arg( ap, int );
-        p->ret = create( fp, stack );
-        break;
-      case( SYS_YIELD ):
-        ready( p );
-        p = next();
-        break;
-      case( SYS_STOP ):
-        p->state = STATE_STOPPED;
-        p = next();
-        break;
-      default:
-        kprintf( "Bad Sys request %d, pid = %d\n", r, p->pid );
-      }
+    for (pcb = next(); pcb;) {
+        //      kprintf("Process %x selected stck %x\n", p, p->esp);
+
+        ctswNumber = contextswitch(pcb);
+        switch (ctswNumber) {
+            case( SYS_CREATE):
+                args = (va_list) pcb->args;
+                fp = (funcptr) (va_arg(args, int));
+                stack = va_arg(args, int);
+                pcb->ret = create(fp, stack);
+                break;
+            case( SYS_YIELD):
+                ready(pcb);
+                pcb = next();
+                break;
+            case( SYS_STOP):
+                pcb->state = STATE_STOPPED;
+                cleanup(pcb);
+                pcb = next();
+                break;
+            default:
+                kprintf("Bad Sys request %d, pid = %d\n", ctswNumber, pcb->pid);
+        }
     }
 
-    kprintf( "Out of processes: dying\n" );
-    
-    for( ;; );
+    kprintf("Out of processes: dying\n");
+
+    for (;;);
 }
 
-extern void dispatchinit( void ) {
-/********************************/
+extern void dispatchinit(void) {
+    /********************************/
 
-  //bzero( proctab, sizeof( pcb ) * MAX_PROC );
-  memset(proctab, 0, sizeof( pcb ) * MAX_PROC);
+    //bzero( proctab, sizeof( pcb ) * MAX_PROC );
+    memset(proctab, 0, sizeof ( pcb) * MAX_PROC);
 }
 
-extern void     ready( pcb *p ) {
-/*******************************/
+extern void ready(pcb *p) {
+    /*******************************/
 
     p->next = NULL;
     p->state = STATE_READY;
 
-    if( tail ) {
-        tail->next = p;
+    if (readyTail) {
+        readyTail->next = p;
     } else {
-        head = p;
+        readyHead = p;
     }
 
-    tail = p;
+    readyTail = p;
 }
 
-extern pcb      *next( void ) {
-/*****************************/
+/**
+ * Returns the next pcb in the readyQueue and updates the current process
+ * @return 
+ */
+extern pcb *next(void) {
+    /*****************************/
 
     pcb *p;
 
-    p = head;
+    p = readyHead;
 
-    if( p ) {
-        head = p->next;
-        if( !head ) {
-            tail = NULL;
+    if (p) {
+        readyHead = p->next;
+        if (!readyHead) {
+            readyTail = NULL;
         }
     }
 
-    return( p );
+    updateCurrentProcess(p);
+
+    return ( p);
 }
 
+void updateCurrentProcess(pcb* process) {
+    currentProcess = process;
+}
+
+extern unsigned int getCurrentPid() {
+    return currentProcess->pid;
+}
+
+void cleanup(pcb* process) {    
+    context_frame* context = process->esp;
+    
+/*
+    kprintf("process->esp: %d\n", process->esp);
+
+    kprintf("edi: %d, esi: %d, ebp: %d, esp: %d, eflags: %d, cs: %d\n",
+            context->edi, context->esi, context->ebp, context->esp,
+            context->eflags, context->iret_cs);
+*/    
+    kfree(context);
+    // TODO: Should I overwrite the current values? with what?
+}

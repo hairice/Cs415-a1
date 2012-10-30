@@ -48,9 +48,10 @@ int syscall( int req, ... ) {
 }
 
  extern unsigned int sysgetpid() {
-     
+     kprintf("current pid is: %d\n", getCurrentPid());
+     return getCurrentPid();
  }
  
  extern void sysputs(char *str) {
-     
+     kprintf(str);
  }

@@ -35,12 +35,11 @@
 
 
     kprintf("Root has been called\n");
-
     sysyield();
     sysyield();
     syscreate( &producer, 4096 );
     syscreate( &consumer, 4096 );
-
+    
     for( ;; ) {
         sysyield();
     }
