@@ -51,8 +51,8 @@ int      create( funcptr fp, int stackSize ) {
     contextFrame->eflags = STARTING_EFLAGS;
 
     contextFrame->esp = (int)(contextFrame + 1);
-    contextFrame->ebp = contextFrame->esp;
-    
+    //contextFrame->ebp = contextFrame->esp;
+    contextFrame->ebp = getSysStopAddr();
     
     process->esp = (int)contextFrame;
     process->state = STATE_READY;
