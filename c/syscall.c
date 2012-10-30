@@ -4,7 +4,6 @@
 #include <xeroskernel.h>
 #include <stdarg.h>
 
-
 int syscall( int req, ... ) {
 /**********************************/
 
@@ -54,4 +53,8 @@ int syscall( int req, ... ) {
  
  extern void sysputs(char *str) {
      kprintf(str);
+ }
+ 
+ extern unsigned int getSysStopAddr() {
+     return &sysstop;
  }

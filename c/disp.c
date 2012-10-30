@@ -7,6 +7,7 @@
 
 
 void updateCurrentProcess(pcb* process);
+unsigned int getContextMemLoc(pcb* process);
 
 static pcb *readyHead = NULL;
 static pcb *readyTail = NULL;
@@ -75,7 +76,6 @@ extern void ready(pcb *p) {
 
 /**
  * Returns the next pcb in the readyQueue and updates the current process
- * @return 
  */
 extern pcb *next(void) {
     /*****************************/
@@ -106,14 +106,20 @@ extern unsigned int getCurrentPid() {
 
 void cleanup(pcb* process) {    
     context_frame* context = process->esp;
-    
+    unsigned int contextMemLoc = getContextMemLoc(process);
+
 /*
-    kprintf("process->esp: %d\n", process->esp);
+    kprintf("process->esp: %d, -stackSize: %d, contextMemLoc: %d\n", 
+        process->esp, process->esp - process->stackSize, contextMemLoc);
 
     kprintf("edi: %d, esi: %d, ebp: %d, esp: %d, eflags: %d, cs: %d\n",
             context->edi, context->esi, context->ebp, context->esp,
             context->eflags, context->iret_cs);
 */    
-    kfree(context);
-    // TODO: Should I overwrite the current values? with what?
+    
+    kfree((void*)contextMemLoc);
+}
+
+unsigned int getContextMemLoc(pcb* process) {
+    return process->esp - process->stackSize + 132; //TODO: Why 132?
 }

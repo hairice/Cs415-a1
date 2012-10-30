@@ -97,6 +97,7 @@ extern int      sysyield( void );
 extern int      sysstop( void );
 extern unsigned int sysgetpid();
 extern unsigned int getCurrentPid();
+extern unsigned int getSysStopAddr();
 extern void sysputs(char *str);
 
 extern void     root( void );

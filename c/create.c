@@ -35,32 +35,34 @@ int      create( funcptr fp, int stackSize ) {
         return( -1 );
     }
 
-
     contextFrame = kmalloc(stackSize * 2);
+
     if( !contextFrame ) {
         return( -1 );
     }
 
     contextFrame = (context_frame *)((int)contextFrame + stackSize - 4);
     contextFrame--;
-
+    
     memset(contextFrame, 0x81, sizeof( context_frame ));
-
+    
     contextFrame->iret_cs = getCS();
     contextFrame->iret_eip = (unsigned int)fp;
     contextFrame->eflags = STARTING_EFLAGS;
-    
 
     contextFrame->esp = (int)(contextFrame + 1);
     contextFrame->ebp = contextFrame->esp;
+    
+    
     process->esp = (int)contextFrame;
     process->state = STATE_READY;
     process->pid = nextpid++;
     
-    // TODO: Do I need to subtract the context size or anything?
-/*
+    kprintf("ebp: %d, &ebp: %d, esp: %d, &esp: %d\n", 
+        contextFrame->ebp, &contextFrame->ebp, contextFrame->esp, &contextFrame->esp);
+    
+    // TODO: Do I need to subtract the context size or anything? Related to the magic #132?
     process->stackSize = stackSize;
-*/
 
     ready( process );
     return( process->pid );
