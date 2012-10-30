@@ -116,6 +116,7 @@ void cleanup(pcb* process) {
             context->edi, context->esi, context->ebp, context->esp,
             context->eflags, context->iret_cs);
 */    
+    kprintf("cleaning ");
     
     kfree((void*)contextMemLoc);
 }

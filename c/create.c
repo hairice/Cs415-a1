@@ -51,15 +51,16 @@ int      create( funcptr fp, int stackSize ) {
     contextFrame->eflags = STARTING_EFLAGS;
 
     contextFrame->esp = (int)(contextFrame + 1);
-    //contextFrame->ebp = contextFrame->esp;
-    contextFrame->ebp = getSysStopAddr();
+    contextFrame->ebp = contextFrame->esp;
+    unsigned int* returnAddr = (unsigned int*) contextFrame->ebp;
+    *returnAddr = getSysStopAddr();
     
     process->esp = (int)contextFrame;
     process->state = STATE_READY;
     process->pid = nextpid++;
     
-    kprintf("ebp: %d, &ebp: %d, esp: %d, &esp: %d\n", 
-        contextFrame->ebp, &contextFrame->ebp, contextFrame->esp, &contextFrame->esp);
+    kprintf("ebp: %d, &ebp: %d, esp: %d, &esp: %d, systop: %d\n", 
+        contextFrame->ebp, &contextFrame->ebp, contextFrame->esp, &contextFrame->esp, getSysStopAddr());
     
     // TODO: Do I need to subtract the context size or anything? Related to the magic #132?
     process->stackSize = stackSize;
