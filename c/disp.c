@@ -109,6 +109,7 @@ extern void ready(pcb *p) {
     /*******************************/
 
     p->next = NULL;
+    p->prev = NULL;
     p->state = STATE_READY;
 
     if (readyTail) {

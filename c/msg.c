@@ -63,9 +63,8 @@ extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_
 
     // adjust receiver's sender queue
     pcb* temp = &receiver->senderQueue->next;
-    temp->prev = NULL;
     ready(receiver->senderQueue);
-    receiver->senderQueue = &temp;
+    receiver->senderQueue = temp;
     
     return buffer_len;
 }
