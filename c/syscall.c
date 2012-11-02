@@ -45,6 +45,10 @@ int syscall( int req, ... ) {
 
     return( syscall( SYS_STOP ) );
 }
+ 
+ extern int systimerint() {
+     return(syscall(TIMER_INT));
+ }
 
  extern unsigned int sysgetpid() {
      kprintf("current pid is: %d\n", getCurrentPid());

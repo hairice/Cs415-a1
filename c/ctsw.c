@@ -62,18 +62,25 @@ int contextswitch( pcb *p ) {
         movl    %%eax, 28(%%esp) \n\
         popa \n\
         iret \n\
-   _KernelEntryPoint: \n\
-        pusha  \n\
-        movl    %%eax, %%ebx \n\
-        movl    saveESP, %%eax  \n\
-        movl    %%esp, saveESP  \n\
-        movl    %%eax, %%esp  \n\
-        movl    %%ebx, 28(%%esp) \n\
-        movl    %%edx, 20(%%esp) \n\
-        popa \n\
-        popf \n\
-        movl    %%eax, rc \n\
-        movl    %%edx, args \n\
+        \
+        _InterruptEntryPoint:\n\
+            pusha\n\
+            movl $1, %%ecx\n\
+            jmp _CommonJump\n\
+        _KernelEntryPoint: \n\
+            cli\n\
+            pusha  \n\
+            movl    %%eax, %%ebx \n\
+        _CommonJump:\n\
+            movl    saveESP, %%eax  \n\
+            movl    %%esp, saveESP  \n\
+            movl    %%eax, %%esp  \n\
+            movl    %%ebx, 28(%%esp) \n\
+            movl    %%edx, 20(%%esp) \n\
+            popa \n\
+            popf \n\
+            movl    %%eax, rc \n\
+            movl    %%edx, args \n\
         "
         : 
         : 

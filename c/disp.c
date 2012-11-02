@@ -49,6 +49,11 @@ void dispatch(void) {
                 pcb = next();
                 break;
                 
+            case(TIMER_INT):
+                ready(pcb);
+                pcb = next();
+                end_of_intr();
+                break;
             case(SYS_SEND):
                 args = (va_list) pcb->args;
                 unsigned int receiverPid = va_arg(args, unsigned int);

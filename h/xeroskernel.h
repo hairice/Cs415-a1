@@ -38,6 +38,7 @@ extern void kfree(void *ptr);
 
 #define MAX_PROC        64
 #define KERNEL_INT      80
+#define TIMER_INT       32
 #define PROC_STACK      (4096 * 4)
 
 #define STATE_STOPPED   0
@@ -108,6 +109,7 @@ extern void     set_evec(unsigned int xnum, unsigned long handler);
 extern int      syscreate( funcptr fp, int stack );
 extern int      sysyield( void );
 extern int      sysstop( void );
+extern int systimerint();
 extern unsigned int sysgetpid();
 extern unsigned int getCurrentPid();
 extern pcb* getCurrentProcess();
