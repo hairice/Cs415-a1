@@ -5,6 +5,12 @@
 
 /* Your code goes here */
 
+/*
+ * TODO: make those checks
+ * TODO: implement a dest/snd pid of 0
+ */
+
+
 short isReceiverWaiting(unsigned int receiverPid);
 void addProcessToSenderQueue(pcb* sender, pcb* receiver);
 
@@ -90,16 +96,11 @@ void putSendDataOnRecvStack(unsigned int dest_pid, void* buffer, int buffer_len)
     kprintf("recvBufferLen: %d, msgLoc: %d\n", recvBufferLen, recvStackLoc);
 
     // Put data in the receiver's buffer
-    //char* bufferData = (char*) buffer;
     unsigned int* recvBuffer = (unsigned int*) recvStackLoc;
     char* recvBufferData = (char*) *recvBuffer;
     *recvBufferData = (char*) buffer;
     
     kprintf("recvBuffLen: %d, recvBufferData: %s\n", recvBufferLen, (char*) buffer);
-}
-
-void doSend() {
-    
 }
 
 extern context_frame* getProcessContext(pcb* proc) {
