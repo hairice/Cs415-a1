@@ -42,11 +42,15 @@ extern void kfree(void *ptr);
 
 #define STATE_STOPPED   0
 #define STATE_READY     1
+#define STATE_BLOCKED   4
 
 #define SYS_STOP        0
 #define SYS_YIELD       1
 #define SYS_CREATE      2
 #define SYS_TIMER       3
+#define SYS_BLOCK       4
+#define SYS_SEND        5
+#define SYS_RECEIVE     6
 
 typedef void    (*funcptr)(void);
 
@@ -54,12 +58,20 @@ typedef struct struct_pcb pcb;
 struct struct_pcb {
     long        esp;
     pcb         *next;
+    pcb* prev;
     int         state;
     unsigned int pid;
+    pcb* senderQueue;
     int         ret;
     long        args;
     unsigned int stackSize;
 };
+
+typedef struct messageData {
+    unsigned int messagePid;
+    void* buffer;
+    int buffer_len;
+} messageData;
 
 extern pcb     proctab[MAX_PROC];
 #pragma pack(1)
@@ -88,6 +100,7 @@ extern void     dispatch( void );
 extern void     dispatchinit( void );
 extern void     ready( pcb *p );
 extern pcb      *next( void );
+extern void block(pcb *p);
 extern void     contextinit( void );
 extern int      contextswitch( pcb *p );
 extern int      create( funcptr fp, int stack );
@@ -97,8 +110,19 @@ extern int      sysyield( void );
 extern int      sysstop( void );
 extern unsigned int sysgetpid();
 extern unsigned int getCurrentPid();
+extern pcb* getCurrentProcess();
 extern unsigned int getSysStopAddr();
 extern void sysputs(char *str);
+extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len);
+extern int sysrecv(unsigned int *from_pid, void *buffer, int buffer_len);
+extern pcb* getProcessByPid(unsigned int pid);
+extern context_frame* getProcessContext(pcb* proc);
+
+extern void idleproc( void );
+
+
+extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc);
+extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len);
 
 extern void     root( void );
 
