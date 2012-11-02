@@ -6,11 +6,13 @@
 /* Your code goes here */
 void producer(void) {
     /****************************/
+/*
     char* thisBuff = "";
     unsigned int* pid = getProcessByPid(3)->pid;
-    sysrecv(pid, thisBuff, 5);
+    sysrecv(pid, &thisBuff, 5);
     kprintf("received message: %s\n", thisBuff);
-    //syssend(3, (char*) "Hello", 8);
+*/
+    syssend(3, (char*) "Hello", 8);
     
     kprintf("back producing\n");
 
@@ -26,14 +28,12 @@ void producer(void) {
 
 void consumer(void) {
     /****************************/
-/*
     char* thisBuff = "";
     unsigned int* pid = getProcessByPid(2)->pid;
     sysrecv(pid, &thisBuff, 5);
     kprintf("received message: %s\n", (char*) thisBuff);
-*/
     
-    syssend(2, (char*) "Hello", 8);
+    //syssend(2, (char*) "Hello", 8);
     
     
     int i;

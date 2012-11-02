@@ -79,7 +79,9 @@ int syscall( int req, ... ) {
      
      // if (!sendingProc) return -1;
      
-     return(syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc));
+     int sentBytes = syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc);
+     
+     return sentBytes;
  }
  
  /**

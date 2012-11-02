@@ -12,26 +12,22 @@ void addProcessToSenderQueue(pcb* sender, pcb* receiver);
 
 extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc) {
     kprintf("receiver pid: %d sender pid: %d\n", dest_pid, getCurrentPid());
-
-    unsigned int* stackLoc = (unsigned int*) sndProc->esp;
-    *stackLoc = buffer;
-    //stackLoc += buffer_len;
-    stackLoc--;
-    *stackLoc = buffer_len;
-    stackLoc--;
+    
+    placeBufferDataOnStack(sndProc, buffer, buffer_len);
     
     if (isReceiverWaiting(dest_pid)) {
         kprintf("Receiver is waiting\n");
-        doSend();
+        //ready(sndProc);
+        //ready(getProcessByPid(dest_pid));
+        return buffer_len;
     } else {
         pcb* receiver = getProcessByPid(dest_pid);
         addProcessToSenderQueue(sndProc, receiver);
         kprintf("Out of func. rece->sender: %d, pid: %d\n", 
                 receiver->senderQueue, receiver->pid);
         block(sndProc);
-    }
-    
-    return buffer_len;
+        return buffer_len;
+    }    
 }
 
 extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len) {
@@ -41,6 +37,7 @@ extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_
     
     if (!receiver->senderQueue) {
         kprintf("No sender queue\n");
+        placeBufferDataOnStack(receiver, buffer, buffer_len);
         block(receiver);
         return 0;
     }
@@ -63,15 +60,22 @@ extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_
 
     // adjust receiver's sender queue
     pcb* temp = &receiver->senderQueue->next;
+    temp->prev = NULL;
     ready(receiver->senderQueue);
-    receiver->senderQueue = temp;
+    receiver->senderQueue = &temp;
     
     return buffer_len;
 }
 
 
 
-
+void placeBufferDataOnStack(pcb* process, void* buffer, int buffer_len) {
+    unsigned int* stackLoc = (unsigned int*) process->esp;
+    *stackLoc = buffer;
+    stackLoc--;
+    *stackLoc = buffer_len;
+    stackLoc--;
+}
 
 void doSend() {
     
