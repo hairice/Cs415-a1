@@ -17,17 +17,20 @@ extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndPro
     
     if (isReceiverWaiting(dest_pid)) {
         kprintf("Receiver is waiting\n");
-        //ready(sndProc);
-        //ready(getProcessByPid(dest_pid));
+        putSendDataOnRecvStack(dest_pid, buffer, buffer_len);
+        ready(getProcessByPid(dest_pid));
+        ready(sndProc);
         return buffer_len;
     } else {
+        // for some reason if I remove the line below everything stops working...
+        kprintf("not in the else block\n");
         pcb* receiver = getProcessByPid(dest_pid);
         addProcessToSenderQueue(sndProc, receiver);
         kprintf("Out of func. rece->sender: %d, pid: %d\n", 
                 receiver->senderQueue, receiver->pid);
         block(sndProc);
         return buffer_len;
-    }    
+    }
 }
 
 extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len) {
@@ -75,6 +78,24 @@ void placeBufferDataOnStack(pcb* process, void* buffer, int buffer_len) {
     stackLoc--;
     *stackLoc = buffer_len;
     stackLoc--;
+}
+
+void putSendDataOnRecvStack(unsigned int dest_pid, void* buffer, int buffer_len) {
+    pcb* recvProc = getProcessByPid(dest_pid);
+    unsigned int* recvStackLoc = (unsigned int*) recvProc->esp - 1;
+    int recvBufferLen = *recvStackLoc;
+    kprintf("senderStackLoc: %d, *: %d\n", recvStackLoc, *recvStackLoc);
+
+    recvStackLoc++;
+    kprintf("recvBufferLen: %d, msgLoc: %d\n", recvBufferLen, recvStackLoc);
+
+    // Put data in the receiver's buffer
+    //char* bufferData = (char*) buffer;
+    unsigned int* recvBuffer = (unsigned int*) recvStackLoc;
+    char* recvBufferData = (char*) *recvBuffer;
+    *recvBufferData = (char*) buffer;
+    
+    kprintf("recvBuffLen: %d, recvBufferData: %s\n", recvBufferLen, (char*) buffer);
 }
 
 void doSend() {
