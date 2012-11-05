@@ -63,7 +63,7 @@ struct struct_pcb {
     int         state;
     unsigned int pid;
     pcb* senderQueue;
-    int         ret;
+    unsigned int         ret;
     long        args;
     unsigned int stackSize;
 };
@@ -94,6 +94,8 @@ typedef struct context_frame {
 
 extern pcb      proctab[MAX_PROC];
 
+pcb* idleProcess;
+
 extern unsigned short getCS(void);
 extern void     kmeminit( void );
 extern void     *kmalloc( int size );
@@ -110,18 +112,22 @@ extern int      syscreate( funcptr fp, int stack );
 extern int      sysyield( void );
 extern int      sysstop( void );
 extern int systimerint();
-extern unsigned int sysgetpid();
-extern unsigned int getCurrentPid();
-extern pcb* getCurrentProcess();
-extern unsigned int getSysStopAddr();
 extern void sysputs(char *str);
 extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len);
 extern int sysrecv(unsigned int *from_pid, void *buffer, int buffer_len);
+extern unsigned int syssleep(unsigned int milliseconds);
+extern unsigned int sysgetpid();
+
+extern unsigned int getCurrentPid();
+extern pcb* getCurrentProcess();
+extern unsigned int getSysStopAddr();
 extern pcb* getProcessByPid(unsigned int pid);
 extern context_frame* getProcessContext(pcb* proc);
 
-extern void idleproc( void );
+extern void idleproc(void);
 
+extern void sleep();
+extern void tick();
 
 extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc);
 extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len);

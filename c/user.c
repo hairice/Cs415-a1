@@ -6,10 +6,12 @@
 /* Your code goes here */
 void producer(void) {
     /****************************/
+/*
     char* thisBuff = "";
-    unsigned int* pid = getProcessByPid(3)->pid;
+    unsigned int* pid = getProcessByPid(4)->pid;
     sysrecv(pid, &thisBuff, 5);
     kprintf("received message: %s\n", thisBuff);
+*/
 /*
     syssend(3, (char*) "Hello", 8);
 */
@@ -35,7 +37,7 @@ void consumer(void) {
     kprintf("received message: %s\n", (char*) thisBuff);
 */
     
-    syssend(2, (char*) "Hello", 8);
+    //syssend(3, (char*) "Hello", 8);
     
     
     int i;
@@ -56,9 +58,12 @@ void root(void) {
     sysyield();
     syscreate(&producer, 4096);
     syscreate(&consumer, 4096);
-
+    
+    //sysyield();
+/*
 
     for (;;) {
         sysyield();
     }
+*/
 }

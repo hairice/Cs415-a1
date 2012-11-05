@@ -8,7 +8,7 @@ int syscall( int req, ... ) {
 /**********************************/
 
     va_list     argList;
-    int         rc;
+    unsigned int         rc;
 
     va_start( argList, req );
 
@@ -20,7 +20,7 @@ int syscall( int req, ... ) {
         "
         : "=g" (rc)
         : "g" (req), "g" (argList), "i" (KERNEL_INT)
-        : "%eax" 
+        : "%eax"
     );
  
     va_end( argList );
@@ -83,9 +83,9 @@ int syscall( int req, ... ) {
      
      // if (!sendingProc) return -1;
      
-     int sentBytes = syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc);
-     
-     return sentBytes;
+     //int sentBytes = syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc);
+     return syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc);
+     //return sentBytes;
  }
  
  /**
@@ -116,4 +116,8 @@ int syscall( int req, ... ) {
  
  extern pcb* getProcessByPid(unsigned int pid) {
      return &proctab[(int)pid - 1];
+ }
+ 
+ extern unsigned int syssleep(unsigned int milliseconds) {
+     
  }

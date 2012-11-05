@@ -67,6 +67,9 @@ int      create( funcptr fp, int stackSize ) {
     // TODO: Do I need to subtract the context size or anything? Related to the magic #132?
     process->stackSize = stackSize;
 
-    ready( process );
+    if (fp != idleproc) {
+        ready(process);
+    }
+    
     return( process->pid );
 }

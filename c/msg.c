@@ -29,7 +29,7 @@ extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndPro
         return buffer_len;
     } else {
         // for some reason if I remove the line below everything stops working...
-        kprintf("not in the else block\n");
+        //kprintf("not in the else block\n");
         pcb* receiver = getProcessByPid(dest_pid);
         addProcessToSenderQueue(sndProc, receiver);
         kprintf("Out of func. rece->sender: %d, pid: %d\n", 

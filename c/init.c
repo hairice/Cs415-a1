@@ -41,6 +41,9 @@ void initproc( void )				/* The beginning */
         kprintf("context inited\n");
 
         create( root, PROC_STACK );
+        unsigned int idleProcessPid = create(idleproc, PROC_STACK);
+        kprintf("idle process pid: %d\n", idleProcessPid);
+        idleProcess = getProcessByPid(idleProcessPid);
         kprintf("create inited\n");
   
         dispatch();

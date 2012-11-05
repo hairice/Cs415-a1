@@ -53,6 +53,7 @@ void dispatch(void) {
                 ready(pcb);
                 pcb = next();
                 end_of_intr();
+                tick();
                 break;
             case(SYS_SEND):
                 args = (va_list) pcb->args;
@@ -94,7 +95,7 @@ void dispatch(void) {
                 kprintf("next pcb is %d, and the real next: %d\n", pcb->pid, pcb->next->pid);
                 break;
             default:
-                kprintf("Bad Sys request %d, pid = %d\n", ctswNumber, pcb->pid);
+                kprintf("Bad Sys request %d, pid = %d, ret %d\n", ctswNumber, pcb->pid, pcb->ret);
         }
     }
 
@@ -112,7 +113,7 @@ extern void dispatchinit(void) {
 
 extern void ready(pcb *p) {
     /*******************************/
-
+    
     p->next = NULL;
     p->prev = NULL;
     p->state = STATE_READY;
@@ -131,7 +132,6 @@ extern void ready(pcb *p) {
  */
 extern pcb *next(void) {
     /*****************************/
-
     pcb *p;
 
     p = readyHead;
@@ -142,6 +142,8 @@ extern pcb *next(void) {
         if (!readyHead) {
             readyTail = NULL;
         }
+    } else {
+        p = idleProcess;
     }
 
     updateCurrentProcess(p);
@@ -187,7 +189,11 @@ unsigned int getContextMemLoc(pcb* process) {
 }
 
 extern void idleproc() {
-    
+    int i;
+    for (i = 0; ; i++) {
+        __asm __volatile("hlt");
+        sysyield();
+    }    
 }
 
 void testTraverseQueue(pcb* queueHead) {
