@@ -15,7 +15,18 @@ short isReceiverWaiting(unsigned int receiverPid);
 void addProcessToSenderQueue(pcb* sender, pcb* receiver);
 
 
-
+/**
+ * Implements the kernel side of syssend. Blocks the sending process until the
+ * operation is complete.
+ * @param dest_pid  the pid of the receiving process
+ * @param buffer  the data to be sent
+ * @param buffer_len  the length of the data to be sent
+ * @param sndProc  the sending process
+ * @return  the number of bytes accepted by the receiving process or a negative
+ *  value if the operation failed.
+ * 
+ * @see syssend(int, void*, int)
+ */
 extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc) {
     kprintf("receiver pid: %d sender pid: %d\n", dest_pid, getCurrentPid());
     
@@ -48,6 +59,22 @@ int getReceiveBufferLength(unsigned int dest_pid) {
     return recvBufferLen;
 }
 
+
+/**
+ * Implements the kernel side of sysrecv. 
+ * 
+ * Sets the process up to receive a message. If no messages are available, the
+ * process is blocked until one is sent to it.
+ * 
+ * Returns the number of bytes that were received OR
+ *      -1 if the PID to receive from is invalid
+ *      -2 if the process tries to receive from itself
+ *      -3 for any other problem (eg. size is negative)
+ * @param from_pid - contains the address of the pid the process is receiving from
+ * @param buffer - address of the destination buffer
+ * @param buffer_len - length of the buffer
+ * @return number of bytes successfully received
+ **/ 
 extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len) {
     kprintf("in recv\n");
     kprintf("sender pid: %d, sender queue: %d, receiver: %d, int(pid): %d\n", 
@@ -80,9 +107,9 @@ extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_
 
     // Put data in the receiver's buffer
     char* bufferData = (char*) buffer;
-    strncpy(*bufferData, (char*) *senderStackLoc, buffer_len);
+    //strncpy(*bufferData, (char*) *senderStackLoc, buffer_len);
     
-    //*bufferData = (char*) *senderStackLoc;
+    *bufferData = (char*) *senderStackLoc;
 
     kprintf("buffer length: %d, received message: %s\n", sendBufferLen, (char*) *senderStackLoc);
 

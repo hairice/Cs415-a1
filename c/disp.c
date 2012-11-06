@@ -49,7 +49,7 @@ void dispatch(void) {
                 pcb = next();
                 break;
             case(TIMER_INT):
-                ready(pcb);
+                if (pcb->state != STATE_BLOCKED) ready(pcb);
                 pcb = next();
                 end_of_intr();
                 tick();
@@ -90,13 +90,16 @@ void dispatch(void) {
                 
 
                 if (pcb->state == STATE_BLOCKED) {
+                    kprintf("State is blocked for %d\n", pcb->pid);
                     pcb = next();
                 } else {
+                    kprintf("State is not blocked for %d\n", pcb->pid);
                     ready(pcb);
                     pcb = next();
                 }
                 
-                kprintf("next pcb is %d, and the real next: %d\n", pcb->pid, pcb->next->pid);
+                kprintf("next pcb is %d, next next %d, and next next pid: %d\n", 
+                        pcb->pid, pcb->next, pcb->next->pid);
                 break;
             default:
                 kprintf("Bad Sys request %d, pid = %d, ret %d\n", ctswNumber, pcb->pid, pcb->ret);
@@ -164,6 +167,11 @@ extern pcb *next(void) {
 extern void block(pcb *p) {
     /*******************************/
     p->state = STATE_BLOCKED;
+    p->next = NULL;
+    p->prev = NULL;
+    
+    kprintf("post-block traversal\n");
+    testTraverseQueue(readyHead);
 }
 
 void updateCurrentProcess(pcb* process) {
@@ -178,7 +186,8 @@ extern pcb* getCurrentProcess() {
     return currentProcess;
 }
 
-void cleanup(pcb* process) {    
+void cleanup(pcb* process) {
+    // TODO: if process stops while sending/receiving...
     unsigned int contextMemLoc = getContextMemLoc(process);
 
 /*
@@ -201,7 +210,7 @@ unsigned int getContextMemLoc(pcb* process) {
 extern void idleproc() {
     int i;
     for (i = 0; ; i++) {
-        __asm __volatile("hlt");
+        //__asm __volatile("hlt");
         sysyield();
     }    
 }

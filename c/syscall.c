@@ -28,6 +28,12 @@ int syscall(int req, ...) {
     return ( rc);
 }
 
+
+/**
+        Takes a function pointer denoting the address to start execution at
+        and an integer that denotes the size of the new process’s stack. The
+        function returns the process ID of the created process.
+ */
 int syscreate(funcptr fp, int stack) {
     /*********************************************/
 

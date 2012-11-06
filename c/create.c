@@ -81,16 +81,7 @@ int      create( funcptr fp, int stackSize ) {
 }
 
 pcb* getNextProcess() {
-    if (nextpid < MAX_PROC) {
-        return &proctab[nextpid - 1];
-    } else {
-        return getProcessByPid(nextpid);
-/*
-        int nextIndex = (nextpid % MAX_PROC) - 1;
-        if (nextIndex < 0) nextIndex = MAX_PROC;
-        return &proctab[nextIndex];
-*/
-    }
+    return getProcessByPid(nextpid);
 }
 
 

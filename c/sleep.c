@@ -65,11 +65,11 @@ extern void sleep(int ticks) {
 extern void tick() {
     if (sleepHead) {
         sleepHead->sleepDelta--;
-        kprintf("%d ", sleepHead->sleepDelta);
+        //kprintf("%d ", sleepHead->sleepDelta);
     }
     
     if (sleepHead->sleepDelta <= 0) {
-        kprintf("unslept\n");
+        //kprintf("unslept\n");
         pcb* nextHead = sleepHead->next;
         ready(sleepHead);
         sleepHead = nextHead;
