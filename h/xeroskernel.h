@@ -52,6 +52,9 @@ extern void kfree(void *ptr);
 #define SYS_BLOCK       4
 #define SYS_SEND        5
 #define SYS_RECEIVE     6
+#define SYS_SLEEP       7
+
+#define CLOCK_DIVISOR   100
 
 typedef void    (*funcptr)(void);
 
@@ -66,6 +69,7 @@ struct struct_pcb {
     unsigned int         ret;
     long        args;
     unsigned int stackSize;
+    unsigned int sleepDelta;
 };
 
 typedef struct messageData {
@@ -126,7 +130,7 @@ extern context_frame* getProcessContext(pcb* proc);
 
 extern void idleproc(void);
 
-extern void sleep();
+extern void sleep(int ticks);
 extern void tick();
 
 extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc);

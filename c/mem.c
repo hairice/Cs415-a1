@@ -117,7 +117,7 @@ void *kmalloc(int size) {
 
     //kprintf("First hdr with enough space: %d\n", memAllocationSlot);
 
-    //sleep();
+    //testSleep();
 
     if (!memAllocationSlot) {
         return 0;
@@ -296,7 +296,7 @@ void printMemHeader(struct memHeader* hdr) {
             hdr, hdr->size, hdr->prev, hdr->next, &hdr->dataStart, hdr->sanityCheck);
 }
 
-void sleep() {
+void testSleep() {
     int i;
     for (i = 0; i < 10000000; i++);
 }

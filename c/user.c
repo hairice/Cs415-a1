@@ -6,15 +6,11 @@
 /* Your code goes here */
 void producer(void) {
     /****************************/
-/*
     char* thisBuff = "";
     unsigned int* pid = getProcessByPid(4)->pid;
-    sysrecv(pid, &thisBuff, 5);
+    sysrecv(0, &thisBuff, 2);
     kprintf("received message: %s\n", thisBuff);
-*/
-/*
-    syssend(3, (char*) "Hello", 8);
-*/
+    //syssend(3, (char*) "Hello", 8);
     
     kprintf("back producing\n");
 
@@ -24,7 +20,7 @@ void producer(void) {
         kprintf("Produce %d\n", i);
         sysyield();
     }
-
+    
     sysstop();
 }
 
@@ -37,10 +33,11 @@ void consumer(void) {
     kprintf("received message: %s\n", (char*) thisBuff);
 */
     
-    //syssend(3, (char*) "Hello", 8);
+    syssend(3, (char*) "Hello", 8);
     
     
     int i;
+    //syssleep(100);
 
     for (i = 0; i < 5; i++) {
         kprintf("Consume %d \n", i);

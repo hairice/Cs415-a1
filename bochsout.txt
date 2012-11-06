@@ -30,50 +30,50 @@
 00000000000i[     ]   SB16 support: yes
 00000000000i[     ]   USB support: yes
 00000000000i[     ]   VGA extension support: vbe 
-00000000000i[MEM0 ] allocated memory at 0x2b9871d47010. after alignment, vector=0x2b9871d48000
+00000000000i[MEM0 ] allocated memory at 0x2b2c76270010. after alignment, vector=0x2b2c76271000
 00000000000i[MEM0 ] 4.00MB
 00000000000i[MEM0 ] mem block size = 0x00100000, blocks=4
 00000000000i[MEM0 ] rom at 0xfffe0000/131072 ('/usr/share/bochs/BIOS-bochs-latest')
 00000000000i[MEM0 ] rom at 0xc0000/40448 ('/usr/share/bochs/VGABIOS-lgpl-latest')
 00000000000i[STIME] using 'slowdown' timer synchronization method
-00000000000i[     ] lt_dlhandle is 0x2ab2b20
+00000000000i[     ] lt_dlhandle is 0x342fb20
 00000000000i[PLGIN] loaded plugin libbx_cmos.so
-00000000000i[     ] lt_dlhandle is 0x2ab3540
+00000000000i[     ] lt_dlhandle is 0x3430540
 00000000000i[PLGIN] loaded plugin libbx_dma.so
-00000000000i[     ] lt_dlhandle is 0x2ab3fa0
+00000000000i[     ] lt_dlhandle is 0x3430fa0
 00000000000i[PLGIN] loaded plugin libbx_pic.so
-00000000000i[     ] lt_dlhandle is 0x2ab47e0
+00000000000i[     ] lt_dlhandle is 0x34317e0
 00000000000i[PLGIN] loaded plugin libbx_pit.so
-00000000000i[     ] lt_dlhandle is 0x2ab5150
+00000000000i[     ] lt_dlhandle is 0x3432150
 00000000000i[PLGIN] loaded plugin libbx_vga.so
-00000000000i[     ] lt_dlhandle is 0x2ab5880
+00000000000i[     ] lt_dlhandle is 0x3432880
 00000000000i[PLGIN] loaded plugin libbx_hdimage.so
-00000000000i[     ] lt_dlhandle is 0x2ab6160
+00000000000i[     ] lt_dlhandle is 0x3433160
 00000000000i[PLGIN] loaded plugin libbx_floppy.so
-00000000000i[     ] lt_dlhandle is 0x2ab6d20
+00000000000i[     ] lt_dlhandle is 0x3433d20
 00000000000i[PLGIN] loaded plugin libbx_soundmod.so
-00000000000i[     ] lt_dlhandle is 0x2ab75a0
+00000000000i[     ] lt_dlhandle is 0x34345a0
 00000000000i[PLGIN] loaded plugin libbx_unmapped.so
-00000000000i[     ] lt_dlhandle is 0x2ab7e10
+00000000000i[     ] lt_dlhandle is 0x3434e10
 00000000000i[PLGIN] loaded plugin libbx_biosdev.so
-00000000000i[     ] lt_dlhandle is 0x2ab8820
+00000000000i[     ] lt_dlhandle is 0x3435820
 00000000000i[PLGIN] loaded plugin libbx_speaker.so
-00000000000i[     ] lt_dlhandle is 0x2ab8fb0
+00000000000i[     ] lt_dlhandle is 0x3435fb0
 00000000000i[PLGIN] loaded plugin libbx_extfpuirq.so
-00000000000i[     ] lt_dlhandle is 0x2ab9820
+00000000000i[     ] lt_dlhandle is 0x3436820
 00000000000i[PLGIN] loaded plugin libbx_gameport.so
-00000000000i[     ] lt_dlhandle is 0x2aba190
+00000000000i[     ] lt_dlhandle is 0x3437190
 00000000000i[PLGIN] loaded plugin libbx_ioapic.so
-00000000000i[     ] lt_dlhandle is 0x2abaac0
+00000000000i[     ] lt_dlhandle is 0x3437ac0
 00000000000i[PLGIN] loaded plugin libbx_keyboard.so
-00000000000i[     ] lt_dlhandle is 0x2abb2a0
+00000000000i[     ] lt_dlhandle is 0x34382a0
 00000000000i[PLGIN] loaded plugin libbx_harddrv.so
-00000000000i[     ] lt_dlhandle is 0x2acd370
+00000000000i[     ] lt_dlhandle is 0x344a370
 00000000000i[PLGIN] loaded plugin libbx_serial.so
-00000000000i[     ] lt_dlhandle is 0x2ace1e0
+00000000000i[     ] lt_dlhandle is 0x344b1e0
 00000000000i[PLGIN] loaded plugin libbx_parallel.so
 00000000000i[CMOS ] Using local time for initial clock
-00000000000i[CMOS ] Setting initial clock to: Sun Nov  4 23:26:09 2012 (time0=1352100369)
+00000000000i[CMOS ] Setting initial clock to: Tue Nov  6 00:23:18 2012 (time0=1352190198)
 00000000000i[DMA  ] channel 4 used by cascade
 00000000000i[DMA  ] channel 2 used by Floppy Drive
 00000000000i[FDD  ] fd0: 'boot/zImage' ro=0, h=2,t=80,spt=18
@@ -151,8 +151,7 @@
 00000818373i[BIOS ] bios_table_addr: 0x000fb928 end=0x000fcc00
 00000830927i[BIOS ] bios_table_cur_addr: 0x000fb928
 00012943040i[BIOS ] Booting from 0000:7c00
-00014891225i[FDD  ] partial read() on floppy image returns 314/512
-00014936180i[FDD  ] read() on floppy image returns 0
+00014936180i[FDD  ] partial read() on floppy image returns 404/512
 00014981135i[FDD  ] read() on floppy image returns 0
 00015026090i[FDD  ] read() on floppy image returns 0
 00015071045i[FDD  ] read() on floppy image returns 0
@@ -243,34 +242,34 @@
 00018901964i[FDD  ] read() on floppy image returns 0
 00018951665i[BIOS ] KBD: unsupported int 16h function 03
 00018956701i[BIOS ] int13_harddisk: function 15, unmapped device for ELDL=81
-00063168000p[SDL  ] >>PANIC<< User requested shutdown.
-00063168000i[CPU0 ] CPU is in protected mode (halted)
-00063168000i[CPU0 ] CS.d_b = 32 bit
-00063168000i[CPU0 ] SS.d_b = 32 bit
-00063168000i[CPU0 ] EFER   = 0x00000000
-00063168000i[CPU0 ] | RAX=0000000000000000  RBX=0000000081818181
-00063168000i[CPU0 ] | RCX=0000000081818181  RDX=0000000000015c88
-00063168000i[CPU0 ] | RSP=0000000000015c90  RBP=0000000000015ca8
-00063168000i[CPU0 ] | RSI=0000000081818181  RDI=0000000081818181
-00063168000i[CPU0 ] |  R8=0000000000000000   R9=0000000000000000
-00063168000i[CPU0 ] | R10=0000000000000000  R11=0000000000000000
-00063168000i[CPU0 ] | R12=0000000000000000  R13=0000000000000000
-00063168000i[CPU0 ] | R14=0000000000000000  R15=0000000000000000
-00063168000i[CPU0 ] | IOPL=3 id vip vif ac vm rf nt of df IF tf sf zf af pf cf
-00063168000i[CPU0 ] | SEG selector     base    limit G D
-00063168000i[CPU0 ] | SEG sltr(index|ti|rpl)     base    limit G D
-00063168000i[CPU0 ] |  CS:0008( 0001| 0|  0) 00000000 00003fff 1 1
-00063168000i[CPU0 ] |  DS:0010( 0002| 0|  0) 00000000 00400fff 1 1
-00063168000i[CPU0 ] |  SS:0018( 0003| 0|  0) 00000000 00400fff 1 1
-00063168000i[CPU0 ] |  ES:0010( 0002| 0|  0) 00000000 00400fff 1 1
-00063168000i[CPU0 ] |  FS:0018( 0003| 0|  0) 00000000 007fffff 1 1
-00063168000i[CPU0 ] |  GS:0018( 0003| 0|  0) 00000000 007fffff 1 1
-00063168000i[CPU0 ] |  MSR_FS_BASE:0000000000000000
-00063168000i[CPU0 ] |  MSR_GS_BASE:0000000000000000
-00063168000i[CPU0 ] | RIP=00000000000017ed (00000000000017ed)
-00063168000i[CPU0 ] | CR0=0x60000011 CR2=0x0000000000000000
-00063168000i[CPU0 ] | CR3=0x00000000 CR4=0x00000000
-00063168000i[CPU0 ] 0x00000000000017ed>> call .+415 (0x00001991) : E89F010000
-00063168000i[CMOS ] Last time is 1352100384 (Sun Nov  4 23:26:24 2012)
-00063168000i[     ] restoring default signal behavior
-00063168000i[CTRL ] quit_sim called with exit code 1
+00060560000p[SDL  ] >>PANIC<< User requested shutdown.
+00060560000i[CPU0 ] CPU is in protected mode (halted)
+00060560000i[CPU0 ] CS.d_b = 32 bit
+00060560000i[CPU0 ] SS.d_b = 32 bit
+00060560000i[CPU0 ] EFER   = 0x00000000
+00060560000i[CPU0 ] | RAX=0000000000000000  RBX=0000000081818181
+00060560000i[CPU0 ] | RCX=0000000081818181  RDX=0000000000015348
+00060560000i[CPU0 ] | RSP=0000000000015350  RBP=0000000000015368
+00060560000i[CPU0 ] | RSI=0000000081818181  RDI=0000000081818181
+00060560000i[CPU0 ] |  R8=0000000000000000   R9=0000000000000000
+00060560000i[CPU0 ] | R10=0000000000000000  R11=0000000000000000
+00060560000i[CPU0 ] | R12=0000000000000000  R13=0000000000000000
+00060560000i[CPU0 ] | R14=0000000000000000  R15=0000000000000000
+00060560000i[CPU0 ] | IOPL=3 id vip vif ac vm rf nt of df IF tf sf zf af pf cf
+00060560000i[CPU0 ] | SEG selector     base    limit G D
+00060560000i[CPU0 ] | SEG sltr(index|ti|rpl)     base    limit G D
+00060560000i[CPU0 ] |  CS:0008( 0001| 0|  0) 00000000 00003fff 1 1
+00060560000i[CPU0 ] |  DS:0010( 0002| 0|  0) 00000000 00400fff 1 1
+00060560000i[CPU0 ] |  SS:0018( 0003| 0|  0) 00000000 00400fff 1 1
+00060560000i[CPU0 ] |  ES:0010( 0002| 0|  0) 00000000 00400fff 1 1
+00060560000i[CPU0 ] |  FS:0018( 0003| 0|  0) 00000000 007fffff 1 1
+00060560000i[CPU0 ] |  GS:0018( 0003| 0|  0) 00000000 007fffff 1 1
+00060560000i[CPU0 ] |  MSR_FS_BASE:0000000000000000
+00060560000i[CPU0 ] |  MSR_GS_BASE:0000000000000000
+00060560000i[CPU0 ] | RIP=000000000000184c (000000000000184c)
+00060560000i[CPU0 ] | CR0=0x60000011 CR2=0x0000000000000000
+00060560000i[CPU0 ] | CR3=0x00000000 CR4=0x00000000
+00060560000i[CPU0 ] 0x000000000000184c>> call .+416 (0x000019f1) : E8A0010000
+00060560000i[CMOS ] Last time is 1352190213 (Tue Nov  6 00:23:33 2012)
+00060560000i[     ] restoring default signal behavior
+00060560000i[CTRL ] quit_sim called with exit code 1

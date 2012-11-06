@@ -48,12 +48,16 @@ void dispatch(void) {
                 cleanup(pcb);
                 pcb = next();
                 break;
-                
             case(TIMER_INT):
                 ready(pcb);
                 pcb = next();
                 end_of_intr();
                 tick();
+                break;
+            case (SYS_SLEEP):
+                args = (va_list) pcb->args;
+                int ticks = va_arg(args, int);
+                sleep(ticks);
                 break;
             case(SYS_SEND):
                 args = (va_list) pcb->args;
@@ -109,6 +113,12 @@ extern void dispatchinit(void) {
 
     //bzero( proctab, sizeof( pcb ) * MAX_PROC );
     memset(proctab, 0, sizeof ( pcb) * MAX_PROC);
+    
+    int i;
+    for (i = 1; i <= MAX_PROC; i++) {
+        pcb* proc = &proctab[i - 1];
+        proc->pid = i;
+    }
 }
 
 extern void ready(pcb *p) {

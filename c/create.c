@@ -4,6 +4,8 @@
 #include <xeroskernel.h>
 #include <xeroslib.h>
 
+pcb* getNextProcess();
+
 pcb     proctab[MAX_PROC];
 
 /* make sure interrupts are armed later on in the kernel development  */
@@ -12,24 +14,22 @@ pcb     proctab[MAX_PROC];
 static int      nextpid = 1;
 
 
-
+/**
+	Takes two parameters, a reference (function pointer) to the start 
+	of the process, and an integer denoting the amount of stack to allocate for the 
+	process. Returns the new process’ pid on success and −1 on failure
+*/
 int      create( funcptr fp, int stackSize ) {
 /***********************************************/
 
     context_frame       *contextFrame;
     pcb                 *process = NULL;
-    int                 i;
 
     if( stackSize < PROC_STACK ) {
         stackSize = PROC_STACK;
     }
 
-    for( i = 0; i < MAX_PROC; i++ ) {
-        if( proctab[i].state == STATE_STOPPED ) {
-            process = &proctab[i];
-            break;
-        }
-    }
+    process = getNextProcess();
 
     if( !process ) {
         return( -1 );
@@ -58,7 +58,13 @@ int      create( funcptr fp, int stackSize ) {
     
     process->esp = (int)contextFrame;
     process->state = STATE_READY;
-    process->pid = nextpid++;
+    
+    // move this into getNextProcess()?
+    if (nextpid > MAX_PROC) {
+        process->pid += MAX_PROC;
+    }
+    
+    nextpid++;
     process->senderQueue = 0;
     
    // kprintf("ebp: %d, &ebp: %d, esp: %d, &esp: %d, systop: %d\n", 
@@ -72,4 +78,27 @@ int      create( funcptr fp, int stackSize ) {
     }
     
     return( process->pid );
+}
+
+pcb* getNextProcess() {
+    if (nextpid < MAX_PROC) {
+        return &proctab[nextpid - 1];
+    } else {
+        return getProcessByPid(nextpid);
+/*
+        int nextIndex = (nextpid % MAX_PROC) - 1;
+        if (nextIndex < 0) nextIndex = MAX_PROC;
+        return &proctab[nextIndex];
+*/
+    }
+}
+
+
+/**
+ * Given a pid, returns the corresponding process
+ */
+extern pcb* getProcessByPid(unsigned int pid) {
+    int index = (pid % MAX_PROC) - 1;
+    if (index < 0) index = MAX_PROC;
+    return &proctab[index];
 }

@@ -24,7 +24,7 @@ void contextinit( void ) {
 /*******************************/
   set_evec( KERNEL_INT, (int) _KernelEntryPoint );
   set_evec(TIMER_INT, (int) _InterruptEntryPoint);
-  initPIT(100);
+  initPIT(CLOCK_DIVISOR);
 }
 
 int contextswitch( pcb *p ) {
