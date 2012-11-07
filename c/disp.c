@@ -170,8 +170,8 @@ extern void block(pcb *p) {
     p->next = NULL;
     p->prev = NULL;
     
-    kprintf("post-block traversal\n");
-    testTraverseQueue(readyHead);
+    //kprintf("post-block traversal\n");
+    //testTraverseQueue(readyHead);
 }
 
 void updateCurrentProcess(pcb* process) {

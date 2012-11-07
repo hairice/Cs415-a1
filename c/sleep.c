@@ -18,32 +18,50 @@ extern void sleep(int ticks) {
     // delta list    
     // http://everything2.com/title/delta+list
     pcb* currProcess = getCurrentProcess();
+    block(currProcess);
     currProcess->sleepDelta = ticks;
-    currProcess->state = STATE_BLOCKED;
     
+    // Place the current process in the sleep queue
     if (sleepHead) {
         if (sleepHead->sleepDelta <= currProcess->sleepDelta) {
             pcb* pqueuePtr = sleepHead;
-            currProcess->sleepDelta -= pqueuePtr->sleepDelta;
-            while (pqueuePtr->next && 
-                    pqueuePtr->next->sleepDelta <= currProcess->sleepDelta) {
-                currProcess->sleepDelta -= pqueuePtr->sleepDelta;
-                pqueuePtr = pqueuePtr->next;
+            
+            while (pqueuePtr) {
+                kprintf("subtracting delta %d = %d - %d\n", 
+                    currProcess->sleepDelta - pqueuePtr->sleepDelta,
+                    currProcess->sleepDelta, pqueuePtr->sleepDelta);
+                currProcess->sleepDelta = currProcess->sleepDelta - pqueuePtr->sleepDelta ;
+                
+                if (!pqueuePtr->next || pqueuePtr->next->sleepDelta > currProcess->sleepDelta) {
+                    break;
+                } else {
+                    pqueuePtr = pqueuePtr->next;
+                }
             }
             
             if (!pqueuePtr->next) {
-                currProcess->sleepDelta -= pqueuePtr->sleepDelta;
+                kprintf("No next: currDelta %d, pqueue Delta: %d\n",
+                    currProcess->sleepDelta, pqueuePtr->sleepDelta);
                 pqueuePtr->next = currProcess;
                 currProcess->prev = pqueuePtr;
-                currProcess->next = NULL;
             } else {
+                kprintf("Adding: currDelta %d, pqueue Delta: %d\n",
+                    currProcess->sleepDelta, pqueuePtr->sleepDelta);
                 currProcess->next = pqueuePtr;
                 currProcess->prev = pqueuePtr->prev;
+                pqueuePtr->sleepDelta = currProcess->sleepDelta - pqueuePtr->sleepDelta;
                 pqueuePtr->prev->next = currProcess;
                 pqueuePtr->prev = currProcess;
             }
+            
+/*
+            
+            int i;
+            for (i = 0; i < 10000000; i++);
+*/
                   
         } else {
+            sleepHead->sleepDelta -= currProcess->sleepDelta;
             sleepHead->prev = currProcess;
             currProcess->next = sleepHead;
             sleepHead = currProcess;
@@ -55,8 +73,8 @@ extern void sleep(int ticks) {
         currProcess->prev = NULL;
         sleepHead = currProcess;
     }
-    
-    testTraverseSleepQueue();
+
+    //testTraverseSleepQueue();
 }
 
 /**

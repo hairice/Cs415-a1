@@ -88,7 +88,7 @@ extern unsigned int getSysStopAddr() {
  * @return - number of bytes successfully sent
  */
 extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len) {
-    kprintf("in syssend - buffer addr: %d\n", &buffer);
+    //kprintf("in syssend - buffer addr: %d\n", &buffer);
     if (dest_pid <= 0) return -1;
     if (getCurrentPid() == dest_pid) return -2;
 
@@ -115,7 +115,7 @@ extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len) {
  * @return number of bytes successfully received
  */
 extern int sysrecv(unsigned int *from_pid, void *buffer, int buffer_len) {
-    kprintf("in sysrecv\n");
+    //kprintf("in sysrecv\n");
     if (buffer_len < 0) {
         kprintf("Negative buffer length\n");
         return -3;
