@@ -51,13 +51,16 @@ void dispatch(void) {
             case(TIMER_INT):
                 if (pcb->state != STATE_BLOCKED) ready(pcb);
                 pcb = next();
-                end_of_intr();
                 tick();
+                end_of_intr();
                 break;
             case (SYS_SLEEP):
+                pcb->state = STATE_BLOCKED;
                 args = (va_list) pcb->args;
                 int ticks = va_arg(args, int);
                 sleep(ticks);
+                pcb = next();
+                kprintf("-  %d  -  ", pcb->pid);
                 break;
             case(SYS_SEND):
                 args = (va_list) pcb->args;
@@ -67,7 +70,6 @@ void dispatch(void) {
                 
                 pcb->ret = send(receiverPid, buffer, buffer_len, pcb);
                 kprintf("back in send - current pcb is %d, ", pcb->pid);
-                
 
                 if (pcb->state == STATE_BLOCKED) {
                     pcb = next();
@@ -129,6 +131,7 @@ extern void ready(pcb *p) {
     
     p->next = NULL;
     p->prev = NULL;
+    p->sleepDelta = 0;
     p->state = STATE_READY;
 
     if (readyTail) {
@@ -208,11 +211,13 @@ unsigned int getContextMemLoc(pcb* process) {
 }
 
 extern void idleproc() {
+    kprintf("idle!");
     int i;
     for (i = 0; ; i++) {
         //__asm __volatile("hlt");
+        testTraverseQueue(readyHead);
         sysyield();
-    }    
+    }
 }
 
 void testTraverseQueue(pcb* queueHead) {

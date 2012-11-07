@@ -34,13 +34,11 @@ extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndPro
     
     if (isReceiverWaiting(dest_pid)) {
         kprintf("Receiver is waiting\n");
-        //int recv_buffer_len = getReceiveBufferLength(dest_pid);
         putDataOnRecvStack(dest_pid, buffer, buffer_len);
         ready(getProcessByPid(dest_pid));
         ready(sndProc);
         return buffer_len;
     } else {
-        // for some reason if I remove the line below everything stops working...
         //kprintf("not in the else block\n");
         pcb* receiver = getProcessByPid(dest_pid);
         addProcessToSenderQueue(sndProc, receiver);
@@ -114,14 +112,12 @@ extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_
     kprintf("sp: %d buffer length: %d, received message: %s\n", senderStackLoc, sendBufferLen, *bufferData);
 */
     
-/*
     kprintf("sp: %d buffer length: %d, *recv %d, received message: %d\n", senderStackLoc, sendBufferLen, *senderStackLoc, senderStackLoc);
     kprintf("sp: %d buffer length: %d, *recv %d, received message: %d\n", senderStackLoc, sendBufferLen, *bufferData, bufferData);
     kprintf("sp: %d buffer length: %d, received message: %d\n", senderStackLoc, sendBufferLen, buffer);
-*/
     
     // adjust receiver's sender queue
-    pcb* temp = &receiver->senderQueue->next;
+    pcb* temp = receiver->senderQueue->next;
     temp->prev = NULL;
     ready(receiver->senderQueue);
     receiver->senderQueue = &temp;
@@ -152,20 +148,16 @@ void putDataOnRecvStack(unsigned int dest_pid, void* buffer, int buffer_len) {
     //kprintf("senderStackLoc: %d, *: %d\n", recvStackLoc, *recvStackLoc);
 
     recvStackLoc++;
-    //kprintf("recvBufferLen: %d, msgLoc: %d\n", recvBufferLen, recvStackLoc);
 
     // Put data in the receiver's buffer
-    int* recvBuffer = (int*) recvStackLoc;
-    //int* recvBufferData = (int*) recvBuffer;
-    int* bufferInt = (int*) buffer;
+    //int* bufferInt = (int*) buffer;
+    int* recvBuffer = (int*) *recvStackLoc;
+    *recvBuffer = (int*) buffer;
     
     if (recvBufferLen < buffer_len) recvBufferLen = buffer_len;
     
-    kprintf("buffer contents %d * = %d\n", bufferInt, *bufferInt);
-    
-    *recvBuffer = *bufferInt;
-        
-    kprintf("recvBuffLen: %d, recvBufferData: %d\n", recvBufferLen, *bufferInt);
+    kprintf("stackLoc %d, *stackLoc %d, buffer contents %d\n", recvStackLoc, *recvStackLoc, buffer);        
+    kprintf("recvBuffLen: %d, recvBufferData: %d\n", recvBufferLen, *recvStackLoc);
 }
 
 extern context_frame* getProcessContext(pcb* proc) {

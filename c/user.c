@@ -8,12 +8,13 @@ void a2Process();
 
 void producer(void) {
     /****************************/
-/*
-    char* thisBuff = "";
+    int recv = 3;
+    int* sleepReceive = recv;
     unsigned int* pid = getProcessByPid(4)->pid;
-    sysrecv(0, &thisBuff, 2);
-    kprintf("received message: %s\n", thisBuff);
-*/
+    kprintf(" receiving from %d\n", sysgetpid());
+    sysrecv(4, &sleepReceive, 2);
+    kprintf("received message: %d\n", sleepReceive);
+    
     //syssend(4, (char*) "Hello", 8);
     
     kprintf("back producing\n");
@@ -37,7 +38,10 @@ void consumer(void) {
     kprintf("received message: %s\n", (char*) thisBuff);
 */
     
-    //syssend(3, (char*) "Hello", 8);
+    int sndAmt = 10022;
+    int* sndBuff = sndAmt;
+    kprintf("sending from %d\n", sysgetpid());
+    syssend(3, sndBuff, sizeof(int));
     
     
     int i;
@@ -56,6 +60,7 @@ void root(void) {
 
     kprintf("Process %d Root is alive!\n", sysgetpid());
     
+/*
     int first = syscreate(&a2Process, 4096);
     int second = syscreate(&a2Process, 4096);
     int third = syscreate(&a2Process, 4096);
@@ -65,36 +70,51 @@ void root(void) {
     kprintf("1st %d, 2nd: %d, 3rd %d, 4th %d\n", 
         first, second, third, fourth);
     
-    //syssleep(4000);
+    syssleep(4000);
     
-    int sndAmt = 10000;
+    int sndAmt = 10022;
     int* sndBuff = sndAmt;
-    //syssend(third, (int*) 10000, sizeof(int));
     syssend(third, sndBuff, sizeof(int));
     
     sndAmt = 7000;
-    //syssend(second, (int*) 7000, sizeof(int));
+    syssend(second, sndBuff, sizeof(int));
     sndAmt = 20000;
-    //syssend(first, (int*) 20000, sizeof(int));
+    syssend(first, sndBuff, sizeof(int));
     sndAmt = 27000;
-    //syssend(fourth, (int*) 27000, sizeof(int));
+    syssend(fourth, sndBuff, sizeof(int));
     
-    //syscreate(&producer, 4096);
-    //syscreate(&consumer, 4096);
+    int message = 1;
+    int* msgRecv = message;
+    int retStatus = sysrecv(fourth, msgRecv, sizeof(int));
+    
+    kprintf("Process %d return status from message send to %d is %d\n",
+        sysgetpid(), fourth, retStatus);
+    
+    sndAmt = 1;
+    int sendStatus = syssend(third, sndBuff, sizeof(int));
+    kprintf("Process %d return status from message send to %d is %d\n",
+        sysgetpid(), third, sendStatus);
+*/
+    
+    syscreate(&producer, 4096);
+    syscreate(&consumer, 4096);
 }
 
 
 void a2Process() {
     kprintf("Process %d is alive!\n", sysgetpid());
-    //syssleep(5000);
-    int sleeper = 1;
+    syssleep(5000);
+    int sleeper = 3;
     int* sleepReceive = sleeper;
     unsigned int* rootPid = getProcessByPid(1)->pid;
     sysrecv(rootPid, &sleepReceive, 8);
-    kprintf("Process %d message received! sleeping for %d ms\n", 
-        sysgetpid(), sleepReceive);
     
-    syssleep(sleepReceive);
+    kprintf("sleepRecv %d\n", &sleepReceive);
+    
+    kprintf("Process %d message received! sleeping for %d ms *: %d\n", 
+        sysgetpid(), sleepReceive, *sleepReceive);
+    
+    //syssleep(sleepReceive);
     
     kprintf("Process %d sleeping has stopped. exiting.\n");
 }
