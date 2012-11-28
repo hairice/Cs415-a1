@@ -13,7 +13,7 @@ static pcb* sleepHead = NULL;
  * @param ticks is the number of ticks that the current process should sleep for
  */
 extern void sleep(int ticks) {
-    kprintf("in sleep function\n");
+    //kprintf("in sleep function\n");
 
     pcb* currProcess = getCurrentProcess();
     currProcess->sleepDelta = ticks;
@@ -24,9 +24,11 @@ extern void sleep(int ticks) {
             pcb* pqueuePtr = sleepHead;
             
             while (pqueuePtr) {
+/*
                 kprintf("subtracting delta %d = %d - %d\n", 
                     currProcess->sleepDelta - pqueuePtr->sleepDelta,
                     currProcess->sleepDelta, pqueuePtr->sleepDelta);
+*/
                 currProcess->sleepDelta -= pqueuePtr->sleepDelta ;
                 
                 if (!pqueuePtr->next || pqueuePtr->next->sleepDelta >= currProcess->sleepDelta) {
@@ -37,13 +39,14 @@ extern void sleep(int ticks) {
             }
             
             if (!pqueuePtr->next) {
+/*
                 kprintf("No next: currDelta %d, pqueue Delta: %d\n",
                     currProcess->sleepDelta, pqueuePtr->sleepDelta);
+*/
                 pqueuePtr->next = currProcess;
                 currProcess->prev = pqueuePtr;
             } else {
-                kprintf("Adding: currDelta %d, pqueue Delta: %d\n",
-                    currProcess->sleepDelta, pqueuePtr->sleepDelta);
+                //kprintf("Adding: currDelta %d, pqueue Delta: %d\n", currProcess->sleepDelta, pqueuePtr->sleepDelta);
                 currProcess->next = pqueuePtr;
                 currProcess->prev = pqueuePtr->prev;
                 pqueuePtr->sleepDelta = currProcess->sleepDelta - pqueuePtr->sleepDelta;
@@ -52,25 +55,25 @@ extern void sleep(int ticks) {
             }
                   
         } else {
-            kprintf("in else... %d - %d\n", sleepHead->sleepDelta, currProcess->sleepDelta);
+            // sleepHead->SleepDelta > currProcess->sleepDelta
+            
+            //kprintf("in else... %d - %d\n", sleepHead->sleepDelta, currProcess->sleepDelta);
             sleepHead->sleepDelta -= currProcess->sleepDelta;
             sleepHead->prev = currProcess;
             currProcess->next = sleepHead;
             sleepHead = currProcess;
         }
         
-        int i;
-        for (i = 0; i < 30000000; i++);
-        
     } else {
-        // There is a problem in here...
-        kprintf("in sleep else - ticks %d, delta %d\n", ticks, currProcess->sleepDelta);
+        // There is no sleepHead
+        
+        //kprintf("in sleep else - ticks %d, delta %d\n", ticks, currProcess->sleepDelta);
         currProcess->next = NULL;
         currProcess->prev = NULL;
         sleepHead = currProcess;
     }
 
-    testTraverseSleepQueue();
+    //testTraverseSleepQueue();
 }
 
 /**
@@ -79,11 +82,11 @@ extern void sleep(int ticks) {
 extern void tick() {
     if (sleepHead) {
         sleepHead->sleepDelta--;
-        kprintf("  -    tick! %d: %d     - ", sleepHead->pid, sleepHead->sleepDelta);
+        //kprintf("  -    tick! %d: %d     - ", sleepHead->pid, sleepHead->sleepDelta);
     }
     
     if (sleepHead->sleepDelta < 1) {
-        kprintf("!!!!!!!!!!unslept\n");
+        //kprintf("!!!!!!!!!!unslept\n");
         pcb* nextHead = sleepHead->next;
         ready(sleepHead);
         sleepHead = nextHead;

@@ -89,16 +89,25 @@ extern unsigned int getSysStopAddr() {
  */
 extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len) {
     //kprintf("in syssend - buffer addr: %d\n", &buffer);
-    if (dest_pid <= 0) return -1;
-    if (getCurrentPid() == dest_pid) return -2;
+    if (dest_pid <= 0) {
+        //kprintf("Invalid Pid! Destination pid %d is invalid - less than or equal to zero\n",
+        //    dest_pid);
+        return -1;
+    }
+    if (sysgetpid() == dest_pid) {
+        //kprintf("Invalid Pid! Destination pid %d is the same as receive pid %d\n",
+        //    dest_pid, sysgetpid());
+        return -2;
+    }
 
-    pcb* sendingProc = getProcessByPid(getCurrentPid());
+    pcb* sendingProc = getProcessByPid(dest_pid);
 
-    // if (!sendingProc) return -1;
+    if (sendingProc->state == STATE_BLOCKED) {
+        //kprintf("%d is an invalid process - stopped\n", dest_pid);
+        return -1;
+    }
 
-    //int sentBytes = syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc);
     return syscall(SYS_SEND, dest_pid, buffer, buffer_len, sendingProc);
-    //return sentBytes;
 }
 
 /**
@@ -117,13 +126,20 @@ extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len) {
 extern int sysrecv(unsigned int *from_pid, void *buffer, int buffer_len) {
     //kprintf("in sysrecv\n");
     if (buffer_len < 0) {
-        kprintf("Negative buffer length\n");
+        kprintf("Error! Negative buffer length\n");
         return -3;
     }
 
-    if (from_pid == getCurrentPid()) {
-        kprintf("from pid = current pid\n");
+    if (sysgetpid() == from_pid) {
+        kprintf("Invalid Pid! Destination pid %d is the same as receive pid %d\n",
+            from_pid, sysgetpid());
         return -2;
+    }
+    
+    pcb* fromProc = getProcessByPid(from_pid);
+    if (from_pid < 0 || fromProc->state == STATE_BLOCKED) {
+        kprintf("Error! Can't receive from %d, pid is invalid\n", from_pid);
+        return -1;
     }
 
     return (syscall(SYS_RECEIVE, from_pid, buffer, buffer_len));

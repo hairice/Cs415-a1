@@ -35,7 +35,6 @@ int contextswitch( pcb *p ) {
 
     saveESP = p->esp;
     rc = p->ret; 
-    
     //kprintf("pre-rc: %d\n", rc);
     
     int i;

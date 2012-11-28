@@ -60,7 +60,7 @@ void dispatch(void) {
                 int ticks = va_arg(args, int);
                 sleep(ticks);
                 pcb = next();
-                kprintf("-  %d  -  ", pcb->pid);
+                //kprintf("-  %d  -  ", pcb->pid);
                 break;
             case(SYS_SEND):
                 args = (va_list) pcb->args;
@@ -69,16 +69,21 @@ void dispatch(void) {
                 buffer_len = va_arg(args, int);
                 
                 pcb->ret = send(receiverPid, buffer, buffer_len, pcb);
-                kprintf("back in send - current pcb is %d, ", pcb->pid);
+                //kprintf("back in disp.sys_send - current pcb is %d\n", pcb->pid);
 
                 if (pcb->state == STATE_BLOCKED) {
+                    //kprintf("%d is blocked, ", pcb->pid);
                     pcb = next();
+                    //kprintf("getting next process: %d\n", pcb->pid);
                 } else {
                   ready(pcb);
                   pcb = next();
                 }
                 
-                kprintf("next pcb is: %d real next: %d\n", pcb->pid, pcb->next->pid);
+/*
+                kprintf("next pcb is: %d ", pcb->pid);
+                kprintf("next->next: %d\n", pcb->next->pid);
+*/
                 break;
                 
             case(SYS_RECEIVE):
@@ -87,21 +92,25 @@ void dispatch(void) {
                 buffer = va_arg(args, void*);
                 buffer_len = va_arg(args, int);
                 
-                pcb->ret = recv(pcb, fromPid, buffer, buffer_len);
-                kprintf("Back in disp receive - current pcb is %d, ", pcb->pid);
+                //kprintf("in dis.recv - buffer_len = %d\n", buffer_len);
                 
-
+                pcb->ret = recv(pcb, fromPid, buffer, buffer_len);
+                
+                //kprintf("Back in disp receive - current pcb is %d, ", pcb->pid);
+                
                 if (pcb->state == STATE_BLOCKED) {
-                    kprintf("State is blocked for %d\n", pcb->pid);
+                    //kprintf("State is blocked for %d\n", pcb->pid);
                     pcb = next();
                 } else {
-                    kprintf("State is not blocked for %d\n", pcb->pid);
+                    //kprintf("State is not blocked for %d\n", pcb->pid);
                     ready(pcb);
                     pcb = next();
                 }
                 
+/*
                 kprintf("next pcb is %d, next next %d, and next next pid: %d\n", 
                         pcb->pid, pcb->next, pcb->next->pid);
+*/
                 break;
             default:
                 kprintf("Bad Sys request %d, pid = %d, ret %d\n", ctswNumber, pcb->pid, pcb->ret);
@@ -211,7 +220,6 @@ unsigned int getContextMemLoc(pcb* process) {
 }
 
 extern void idleproc() {
-    kprintf("idle!");
     int i;
     for (i = 0; ; i++) {
         //__asm __volatile("hlt");

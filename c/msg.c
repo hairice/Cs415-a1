@@ -28,22 +28,22 @@ void addProcessToSenderQueue(pcb* sender, pcb* receiver);
  * @see syssend(int, void*, int)
  */
 extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc) {
-    kprintf("receiver pid: %d sender pid: %d\n", dest_pid, getCurrentPid());
+    //kprintf("receiver pid: %d sender pid: %d\n", dest_pid, getCurrentPid());
     
     placeBufferDataOnStack(sndProc, buffer, buffer_len);
     
     if (isReceiverWaiting(dest_pid)) {
-        kprintf("Receiver is waiting\n");
+      //  kprintf("Receiver is waiting\n");
         putDataOnRecvStack(dest_pid, buffer, buffer_len);
         ready(getProcessByPid(dest_pid));
         ready(sndProc);
         return buffer_len;
     } else {
-        //kprintf("not in the else block\n");
+        //kprintf("No waiting receiver :(\n");
         pcb* receiver = getProcessByPid(dest_pid);
         addProcessToSenderQueue(sndProc, receiver);
-        kprintf("Out of func. rece->sender: %d, pid: %d\n", 
-                receiver->senderQueue, receiver->pid);
+        //kprintf("Added process to senderQueue. recv->senderQueue: %d, pid: %d\n", 
+        //        receiver->senderQueue, receiver->pid);
         block(sndProc);
         return buffer_len;
     }
@@ -53,7 +53,7 @@ int getReceiveBufferLength(unsigned int dest_pid) {
     pcb* receiver = getProcessByPid(dest_pid);
     unsigned int* recvBufferLoc = (unsigned int*) receiver->esp - 1;
     int recvBufferLen = *recvBufferLoc;
-    kprintf("recvBufferLen = %d\n", recvBufferLen);
+    //kprintf("recvBufferLen = %d\n", recvBufferLen);
     return recvBufferLen;
 }
 
@@ -74,47 +74,36 @@ int getReceiveBufferLength(unsigned int dest_pid) {
  * @return number of bytes successfully received
  **/ 
 extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len) {
-/*
-    kprintf("in recv\n");
-    kprintf("sender pid: %d, sender queue: %d, receiver: %d, int(pid): %d\n", 
-        from_pid, receiver->senderQueue, receiver->pid, (int) from_pid);
-*/
+    //kprintf("in recv\n");
     
     if (!receiver->senderQueue) {
-        kprintf("No sender queue\n");
+        //kprintf("No sender queue - putting data on stack and blocking\n");
         placeBufferDataOnStack(receiver, buffer, buffer_len);
         block(receiver);
         return 0;
+    } else {
+        //kprintf("sender queue waiting - traversing\n");
+        //testTraverseQueue(receiver->senderQueue);
     }
     
     pcb* sender;
     if ((int) from_pid == 0) {
+      //  kprintf("receiving message from any process!\n");
         sender = receiver->senderQueue;
     }
     else {
         sender = getProcessByPid(from_pid);
     }
     
-    //kprintf("sender pid check: %d\n", sender->pid);
     unsigned int* senderStackLoc = (unsigned int*) sender->esp - 1;
     int sendBufferLen = *senderStackLoc;
 
     senderStackLoc++;
-    kprintf("sendBufferLen: %d, msgLoc: %d\n", sendBufferLen, senderStackLoc);
+    //kprintf("sendBufferLen: %d, msgLoc: %d, msg: %d\n", sendBufferLen, senderStackLoc, *senderStackLoc);
 
     // Put data in the receiver's buffer
     int* bufferData = (int*) buffer;
     *bufferData = (int*) *senderStackLoc;
-    
-/*
-    kprintf("sp: %d buffer length: %d, received message: %s\n", senderStackLoc, sendBufferLen, *bufferData);
-    kprintf("sp: %d buffer length: %d, received message: %s\n", senderStackLoc, sendBufferLen, *bufferData);
-    kprintf("sp: %d buffer length: %d, received message: %s\n", senderStackLoc, sendBufferLen, *bufferData);
-*/
-    
-    kprintf("sp: %d buffer length: %d, *recv %d, received message: %d\n", senderStackLoc, sendBufferLen, *senderStackLoc, senderStackLoc);
-    kprintf("sp: %d buffer length: %d, *recv %d, received message: %d\n", senderStackLoc, sendBufferLen, *bufferData, bufferData);
-    kprintf("sp: %d buffer length: %d, received message: %d\n", senderStackLoc, sendBufferLen, buffer);
     
     // adjust receiver's sender queue
     pcb* temp = receiver->senderQueue->next;
@@ -150,14 +139,15 @@ void putDataOnRecvStack(unsigned int dest_pid, void* buffer, int buffer_len) {
     recvStackLoc++;
 
     // Put data in the receiver's buffer
-    //int* bufferInt = (int*) buffer;
     int* recvBuffer = (int*) *recvStackLoc;
     *recvBuffer = (int*) buffer;
     
     if (recvBufferLen < buffer_len) recvBufferLen = buffer_len;
     
-    kprintf("stackLoc %d, *stackLoc %d, buffer contents %d\n", recvStackLoc, *recvStackLoc, buffer);        
-    kprintf("recvBuffLen: %d, recvBufferData: %d\n", recvBufferLen, *recvStackLoc);
+/*
+    kprintf("stackLoc %d, *stackLoc %d, buffer contents %d\n", recvStackLoc, *recvStackLoc, buffer);
+    kprintf("recvBuffLen: %d, recvBufferContents: %d\n", recvBufferLen, buffer);
+*/
 }
 
 extern context_frame* getProcessContext(pcb* proc) {
@@ -176,8 +166,11 @@ short isReceiverWaiting(unsigned int receiverPid) {
 }
 
 void addProcessToSenderQueue(pcb* sender, pcb* receiver) {
+    //kprintf("adding process %d to the senderQueue of receiver %d\n", sender->pid, receiver->pid);
     if (receiver->senderQueue == NULL) {
         receiver->senderQueue = sender;
+        receiver->senderQueue->next = NULL;
+        receiver->senderQueue->prev = NULL;
     } else {
         pcb* currPcb = receiver->senderQueue;
         
@@ -188,7 +181,6 @@ void addProcessToSenderQueue(pcb* sender, pcb* receiver) {
         sender->prev = currPcb;
         currPcb->next = sender;
     }
-    kprintf("sender: %d, receiver: %d, rec->senders: %d\n", 
-        sender, receiver, receiver->senderQueue);
-    testTraverseQueue(receiver);
+    //kprintf("traversing receiver send queue - sender %d, receiver %d\n", sender, receiver);
+    //testTraverseQueue(receiver->senderQueue);
 }
