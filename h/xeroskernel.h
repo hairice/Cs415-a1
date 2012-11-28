@@ -38,45 +38,44 @@ extern void kfree(void *ptr);
 
 #define MAX_PROC        64
 #define KERNEL_INT      80
-#define TIMER_INT       32
+#define TIMER_INT       (TIMER_IRQ + 32)
 #define PROC_STACK      (4096 * 4)
 
 #define STATE_STOPPED   0
 #define STATE_READY     1
-#define STATE_BLOCKED   4
+#define STATE_SLEEP     2
 
 #define SYS_STOP        0
 #define SYS_YIELD       1
 #define SYS_CREATE      2
 #define SYS_TIMER       3
-#define SYS_BLOCK       4
-#define SYS_SEND        5
-#define SYS_RECEIVE     6
-#define SYS_SLEEP       7
+#define SYS_GETPID      8
+#define SYS_PUTS        9
+#define SYS_SLEEP       10
 
-#define CLOCK_DIVISOR   100
 
 typedef void    (*funcptr)(void);
 
+typedef struct signalEntry {
+    funcptr handler;
+} signalEntry;
+
 typedef struct struct_pcb pcb;
 struct struct_pcb {
-    long        esp;
-    pcb         *next;
-    pcb* prev;
-    int         state;
-    unsigned int pid;
-    pcb* senderQueue;
-    unsigned int         ret;
-    long        args;
-    unsigned int stackSize;
-    unsigned int sleepDelta;
-};
+  long        esp;
+  pcb         *next;
+  pcb         *prev;
+  int         state;
+  int         pid;
+  int         otherpid;
+  //signalEntry signalTable[32];
+  void*      buffer;
+  int         bufferlen;
+  int         ret;
+  int         sleepdiff;
+  long        args;
 
-typedef struct messageData {
-    unsigned int messagePid;
-    void* buffer;
-    int buffer_len;
-} messageData;
+};
 
 extern pcb     proctab[MAX_PROC];
 #pragma pack(1)
@@ -98,50 +97,35 @@ typedef struct context_frame {
 
 extern pcb      proctab[MAX_PROC];
 
-pcb* idleProcess;
+unsigned short getCS(void);
+void     kmeminit( void );
+void     *kmalloc( int size );
+void     dispatch( void );
+void     dispatchinit( void );
+void     ready( pcb *p );
+pcb      *next( void );
+void     contextinit( void );
+int      contextswitch( pcb *p );
+int      create( funcptr fp, int stack );
+void     set_evec(unsigned int xnum, unsigned long handler);
+void     tick(void);
+void     sleep(pcb*, int);
 
-extern unsigned short getCS(void);
-extern void     kmeminit( void );
-extern void     *kmalloc( int size );
-extern void     dispatch( void );
-extern void     dispatchinit( void );
-extern void     ready( pcb *p );
-extern pcb      *next( void );
-extern void block(pcb *p);
-extern void     contextinit( void );
-extern int      contextswitch( pcb *p );
-extern int      create( funcptr fp, int stack );
-extern void     set_evec(unsigned int xnum, unsigned long handler);
-extern int      syscreate( funcptr fp, int stack );
-extern int      sysyield( void );
-extern int      sysstop( void );
-extern int systimerint();
-extern void sysputs(char *str);
-extern int syssend(unsigned int dest_pid, void *buffer, int buffer_len);
-extern int sysrecv(unsigned int *from_pid, void *buffer, int buffer_len);
-extern unsigned int syssleep(unsigned int milliseconds);
-extern unsigned int sysgetpid();
-
-extern unsigned int getCurrentPid();
-extern pcb* getCurrentProcess();
-extern unsigned int getSysStopAddr();
-extern pcb* getProcessByPid(unsigned int pid);
-extern context_frame* getProcessContext(pcb* proc);
-
-extern void idleproc(void);
-
-extern void sleep(int ticks);
-extern void tick();
-
-extern int send(unsigned int dest_pid, void *buffer, int buffer_len, pcb* sndProc);
-extern int recv(pcb* receiver, unsigned int* from_pid, void* buffer, int buffer_len);
 
 extern void     root( void );
-
 void printCF (void * stack);
 
+
+/* System Calls - probably should be in a different .h file */
+
 int syscall(int call, ...);
-/* int syscreate(void (*func)(), int stack); */
+int syscreate( funcptr fp, int stack );
 int sysyield(void);
 int sysstop(void);
-
+int sysgetpid( void );
+void sysputs( char *str );
+unsigned int syssleep( unsigned int t );
+int syssigwait(void);
+int syskill(int PID, int signalNumber);
+void sigreturn(void *old_sp);
+int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(void *));

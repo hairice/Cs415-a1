@@ -1,7 +1,3 @@
-
-
-
-
 #TEST = -DTEST_DRIVER
 
 CCPREFIX = 

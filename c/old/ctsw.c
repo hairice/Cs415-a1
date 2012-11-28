@@ -1,20 +1,8 @@
 /* ctsw.c : context switcher
  */
 
-#include <i386.h>
 #include <xeroskernel.h>
-
-void contextinit();
-int contextswitch(struct pcb*);
-void _ISREntryPoint();
-extern int set_evec(int, long);
-
-
-static void *k_stack;
-static int ESP;
-static int systemCallType;
-static int CTSW_INTERRUPT = 57;
-static int returnVar;
+#include <i386.h>
 
 /* Your code goes here - You will need to write some assembly code. You must
    use the gnu conventions for specifying the instructions. (i.e this is the
@@ -23,42 +11,118 @@ static int returnVar;
    assembly language conventions.
 */
 
-void contextinit() {
-	void (*entryFunc)() = &_ISREntryPoint;
-	setEvec(CTSW_INTERRUPT, entryFunc);
+void _KernelEntryPoint(void);
+void _InterruptEntryPoint(void);
+
+static unsigned int        saveESP;
+static unsigned int        rc;
+static long                args;
+static unsigned int interrupt;
+
+
+void contextinit( void ) {
+/*******************************/
+  set_evec( KERNEL_INT, (int) _KernelEntryPoint );
+  set_evec(TIMER_INT, (int) _InterruptEntryPoint);
+  initPIT(CLOCK_DIVISOR);
 }
 
+int contextswitch( pcb *p ) {
+/**********************************/
 
-extern int contextswitch(struct pcb* process) { 
-	//kprintf("c");
-	ESP = process->context->esp;
-	
-	//printContext("\nswitch", process->context);
-	//kprintf("ESP: %d\n", ESP);
+    /* keep every thing on the stack to simplfiy gcc's gesticulations
+     */
 
-	__asm __volatile("\
-		pushf\n\
-		pusha\n\
-		movl %%esp, k_stack\n\
-		movl ESP, %%esp\n\
-		popa\n\
-		iret\n\
-		\
-		_ISREntryPoint:\n\
-			pusha\n\
-			movl %%esp, ESP\n\
-			movl k_stack, %%esp\n\
-			movl %%eax, returnVar\n\
-			popa\n\
-			popf\n\
-		"
-		:
-		:
-		: "%eax"
-	);
+    saveESP = p->esp;
+    rc = p->ret; 
+    //kprintf("pre-rc: %d\n", rc);
+    
+    int i;
+    //for (i=0; i < 1000000; i++);
+    
+    // Interrupt is a boolean variable set by, I don't know
+ 
+    /* In the assembly code, switching to process
+     * 1.  Push eflags and general registers on the stack
+     * 2.  Load process's return value into eax
+     * 3.  load processes ESP into edx, and save kernel's ESP in saveESP
+     * 4.  Set up the process stack pointer
+     * 5.  store the return value on the stack where the processes general
+     *     registers, including eax has been stored.  We place the return
+     *     value right in eax so when the stack is popped, eax will contain
+     *     the return value
+     * 6.  pop general registers from the stack
+     * 7.  Do an iret to switch to process
+     *
+     * Switching to kernel
+     * 1.  Push regs on stack, set ecx to 1 if timer interrupt, jump to common
+     *     point.
+     * 2.  Store request code in ebx
+     * 3.  exchange the process esp and kernel esp using saveESP and eax
+     *     saveESP will contain the process's esp
+     * 4a. Store the request code on stack where kernel's eax is stored
+     * 4b. Store the timer interrupt flag on stack where kernel's eax is stored
+     * 4c. Store the the arguments on stack where kernel's edx is stored
+     * 5.  Pop kernel's general registers and eflags
+     * 6.  store the request code, trap flag and args into variables
+     * 7.  return to system servicing code
+     */
+ 
+    __asm __volatile( " \
+        pushf \n\
+        pusha \n\
+        movl    rc, %%eax    \n\
+        movl    saveESP, %%edx    \n\
+        movl    %%esp, saveESP    \n\
+        movl    %%edx, %%esp \n\
+        movl    %%eax, 28(%%esp) \n\
+        popa \n\
+        iret \n\
+        \
+        _InterruptEntryPoint:\n\
+            cli\n\
+            pusha\n\
+            #movl $1, %%ecx\n\
+            movl $1, interrupt\n\
+            jmp _CommonJump\n\
+        _KernelEntryPoint: \n\
+            cli\n\
+            pusha\n\
+            movl $0, interrupt\n\
+        _CommonJump:\n\
+            movl    %%eax, %%ebx\n\
+            movl    saveESP, %%eax  \n\
+            movl    %%esp, saveESP  \n\
+            movl    %%eax, %%esp  \n\
+            movl    %%ebx, 28(%%esp) \n\
+            movl    %%edx, 20(%%esp) \n\
+            popa \n\
+            popf \n\
+            movl    %%eax, rc \n\
+            movl    %%edx, args \n\
+            #movl    %%ecx, interrupt\n\
+        "
+        : 
+        : 
+        : "%eax", "%edx"
+    );
 
-	//kprintf("C");
-	process->context->esp = ESP;
-	//kprintf("Returning from ctsw: %d\n", returnVar);
-	return returnVar;
+    /* save esp and read in the arguments
+     */
+    p->esp = saveESP;
+    p->args = args;
+    
+    //kprintf("interrupt: %d\n", interrupt);    
+    if (interrupt) {
+        //context_frame* context = getProcessContext(p);
+        //context->eax = rc;
+        //kprintf("rc: %d, interupt: %d, ret: %d, args: %d, timer: %d\n", 
+        //        rc, interrupt, p->ret, args, TIMER_INT);
+        p->ret = rc;
+        //kprintf("rc: %d\n", rc);
+        rc = TIMER_INT;
+    }
+    
+    
+    return rc;
 }

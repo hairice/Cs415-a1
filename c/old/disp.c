@@ -2,301 +2,240 @@
  */
 
 #include <xeroskernel.h>
+#include <xeroslib.h>
+#include <stdarg.h>
 
-void initializeQueue(int index, struct pcb* queue);
-void initializePcbTable();
-void initializeFreeQueue();
-void initializeReadyQueue();
-void dispatch();
-void ready(struct pcb*);
-struct pcb* next();
-void cleanup(struct pcb*);
-extern struct pcb* getFreeProcess();
-extern struct pcb* getPcbByPid(int pid);
-void printPcbData(char*, struct pcb*);
-void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning);
-void insertNodeAtEndOfFreeQueue(struct pcb* node);
-void insertNodeAtEndOfReadyQueue(struct pcb* node);
-extern void root(void);
-struct pcb* popNodeFromQueue(struct pcb* queueBeginning);
-struct pcb* popNodeFromFreeQueue();
-struct pcb* popNodeFromReadyQueue();
-extern void traverseReadyQueue(char*);
-extern void debugSleep();
 
-/* Your code goes here */
+void updateCurrentProcess(pcb* process);
+unsigned int getContextMemLoc(pcb* process);
 
-static struct pcb* readyQueue;
-static struct pcb* freeQueue;
-static struct pcb* pcbTable[31];
 
-extern void initializeProcesses() {
-    initializeReadyQueue();
-    initializeFreeQueue();
-    initializePcbTable();
-    //traverseQueue("free queue traversal", freeQueue);
+static pcb* currentProcess = NULL;
+
+static pcb *readyHead = NULL;
+static pcb *readyTail = NULL;
+
+
+void dispatch(void) {
+    /********************************/
+
+    pcb *pcb;
+    int ctswNumber;
+    funcptr fp;
+    int stack;
+    va_list args;
+    
+    void* buffer;
+    int buffer_len;
+
+    for (pcb = next(); pcb;) {
+        //      kprintf("Process %x selected stck %x\n", p, p->esp);
+
+        ctswNumber = contextswitch(pcb);
+        switch (ctswNumber) {
+            case(SYS_CREATE):
+                args = (va_list) pcb->args;
+                fp = (funcptr) (va_arg(args, int));
+                stack = va_arg(args, int);
+                pcb->ret = create(fp, stack);
+                break;
+            case(SYS_YIELD):
+                ready(pcb);
+                pcb = next();
+                break;
+            case(SYS_STOP):
+                pcb->state = STATE_STOPPED;
+                cleanup(pcb);
+                pcb = next();
+                break;
+            case(TIMER_INT):
+                if (pcb->state != STATE_BLOCKED) ready(pcb);
+                pcb = next();
+                tick();
+                end_of_intr();
+                break;
+            case (SYS_SLEEP):
+                pcb->state = STATE_BLOCKED;
+                args = (va_list) pcb->args;
+                int ticks = va_arg(args, int);
+                sleep(ticks);
+                pcb = next();
+                //kprintf("-  %d  -  ", pcb->pid);
+                break;
+            case(SYS_SEND):
+                args = (va_list) pcb->args;
+                unsigned int receiverPid = va_arg(args, unsigned int);
+                buffer = va_arg(args, void*);
+                buffer_len = va_arg(args, int);
+                
+                pcb->ret = send(receiverPid, buffer, buffer_len, pcb);
+                //kprintf("back in disp.sys_send - current pcb is %d\n", pcb->pid);
+
+                if (pcb->state == STATE_BLOCKED) {
+                    //kprintf("%d is blocked, ", pcb->pid);
+                    pcb = next();
+                    //kprintf("getting next process: %d\n", pcb->pid);
+                } else {
+                  ready(pcb);
+                  pcb = next();
+                }
+                
+/*
+                kprintf("next pcb is: %d ", pcb->pid);
+                kprintf("next->next: %d\n", pcb->next->pid);
+*/
+                break;
+                
+            case(SYS_RECEIVE):
+                args = (va_list) pcb->args;
+                unsigned int* fromPid = va_arg(args, unsigned int*);    
+                buffer = va_arg(args, void*);
+                buffer_len = va_arg(args, int);
+                
+                //kprintf("in dis.recv - buffer_len = %d\n", buffer_len);
+                
+                pcb->ret = recv(pcb, fromPid, buffer, buffer_len);
+                
+                //kprintf("Back in disp receive - current pcb is %d, ", pcb->pid);
+                
+                if (pcb->state == STATE_BLOCKED) {
+                    //kprintf("State is blocked for %d\n", pcb->pid);
+                    pcb = next();
+                } else {
+                    //kprintf("State is not blocked for %d\n", pcb->pid);
+                    ready(pcb);
+                    pcb = next();
+                }
+                
+/*
+                kprintf("next pcb is %d, next next %d, and next next pid: %d\n", 
+                        pcb->pid, pcb->next, pcb->next->pid);
+*/
+                break;
+            default:
+                kprintf("Bad Sys request %d, pid = %d, ret %d\n", ctswNumber, pcb->pid, pcb->ret);
+        }
+    }
+
+    kprintf("Out of processes: dying\n");
+
+    for (;;);
 }
 
-void initializeReadyQueue() {
-    readyQueue->next = 0;
-    readyQueue->prev = 0;
-    readyQueue = 0;
-}
+extern void dispatchinit(void) {
+    /********************************/
 
-void initializeFreeQueue() {
-    struct pcb* pcb = (struct pcb*) kmalloc(sizeof (struct pcb));
-    pcb->next = pcb;
-    pcb->prev = pcb;
-    pcb->pid = 0;
-    pcb->context = 0;
-    freeQueue = pcb;
-    pcbTable[0] = pcb;
-}
-
-void initializePcbTable() {
+    //bzero( proctab, sizeof( pcb ) * MAX_PROC );
+    memset(proctab, 0, sizeof ( pcb) * MAX_PROC);
+    
     int i;
-    for (i = 1; i < 32; i++) {
-        pcbTable[i] = (struct pcb*) kmalloc(sizeof (struct pcb));
-        pcbTable[i]->pid = i;
-        pcbTable[i]->context = 0;
-        pcbTable[i]->next = 0;
-        pcbTable[i]->prev = 0;
-        insertNodeAtEndOfFreeQueue(pcbTable[i]);
+    for (i = 1; i <= MAX_PROC; i++) {
+        pcb* proc = &proctab[i - 1];
+        proc->pid = i;
     }
 }
 
-void dispatch() {
-    //	kprintf("d");
-    struct pcb* process = next();
-    for (;;) {
-        //printContext("\ntop of dispatch loop", process->context);
-        int request;
-        request = contextswitch(process);
-        switch (request) {
-            case(CREATE):
-            {
-                create(process->context->eip, 256);
-                break;
-            }
-            case(YIELD): ready(process);
-                process = next();
-                break;
-            case(STOP): cleanup(process);
-                process = next();
-                break;
+extern void ready(pcb *p) {
+    /*******************************/
+    
+    p->next = NULL;
+    p->prev = NULL;
+    p->sleepDelta = 0;
+    p->state = STATE_READY;
+
+    if (readyTail) {
+        readyTail->next = p;
+    } else {
+        readyHead = p;
+    }
+
+    readyTail = p;
+}
+
+/**
+ * Returns the next pcb in the readyQueue and updates the current process
+ */
+extern pcb *next(void) {
+    /*****************************/
+    pcb *p;
+
+    p = readyHead;
+
+    if (p) {
+        readyHead = p->next;
+        
+        if (!readyHead) {
+            readyTail = NULL;
         }
-        //		kprintf("D");
+    } else {
+        p = idleProcess;
     }
+
+    updateCurrentProcess(p);
+
+    return (p);
 }
 
-/**
-        Removes the next process from the ready queue and 
-        returns an index or a pointer to its process control block
- */
-struct pcb* next() {
-    //traverseQueue("Getting next", readyQueue);
-    return popNodeFromReadyQueue();
-}
-
-/**
-        Takes an index or pointer to a process control block and 
-        adds it to the ready queue
- */
-void ready(struct pcb* process) {
-    process->state = READY;
+extern void block(pcb *p) {
+    /*******************************/
+    p->state = STATE_BLOCKED;
+    p->next = NULL;
+    p->prev = NULL;
     
-    if (! readyQueue) {
-        //kprintf("Nothing in rdy queue right now\n");		
-        process->next = process;
-        process->prev = process;
-        readyQueue = process;
-        //printPcbData("first node in ready queue post-insert", readyQueue);
-        //printPcbData("post-insert node", process);
-    } else {
-        //printPcbData("Inserting Node", process);
-        insertNodeAtEndOfReadyQueue(process);
-        //printPcbData("first node in readyQueue", readyQueue);
-    }
-
-    //traverseQueue("post-insert traversal", readyQueue);
+    //kprintf("post-block traversal\n");
+    //testTraverseQueue(readyHead);
 }
 
-/**
-        Frees a processes' context and adds the process to the free queue
- */
-void cleanup(struct pcb* process) {
-    kfree(process->context);
-    insertNodeAtEndOfFreeQueue(process);
+void updateCurrentProcess(pcb* process) {
+    currentProcess = process;
 }
 
-/**
-        Returns a free process from the process queue
- */
-extern struct pcb* getFreeProcess() {
-    //traverseQueue("free queue before pop", freeQueue);
-    struct pcb* freeProcess = popNodeFromFreeQueue();
-    //traverseQueue("free queue after pop", freeQueue);
-    return freeProcess;
+extern unsigned int getCurrentPid() {
+    return currentProcess->pid;
 }
 
-/**
-        Given a pid, the corresponding PCB is returned, or -1 if 
-        the pid is invalid
- */
-extern struct pcb* getPcbByPid(int pid) {
-    if (pid < 32 && pid >= 0) {
-        return pcbTable[pid];
-    } else {
-        return -1;
-    }
+extern pcb* getCurrentProcess() {
+    return currentProcess;
 }
 
-// TODO: Why doesn't this abstraction work?
+void cleanup(pcb* process) {
+    // TODO: if process stops while sending/receiving...
+    unsigned int contextMemLoc = getContextMemLoc(process);
 
-/**
-        Given a pointer to a queue, the function will return the 
-        beginning of that queue.
- */
-struct pcb* popNodeFromQueue(struct pcb* queueBeginning) {
-    if (!queueBeginning) {
-        return 0;
-    }
+/*
+    kprintf("process->esp: %d, -stackSize: %d, contextMemLoc: %d\n", 
+        process->esp, process->esp - process->stackSize, contextMemLoc);
 
-    struct pcb* popped = queueBeginning;
-
-    if (!queueBeginning->next || (queueBeginning->next == queueBeginning)) {
-        queueBeginning = 0;
-    } else {
-        struct pcb* finalNode = queueBeginning->prev;
-        queueBeginning = queueBeginning->next;
-        queueBeginning->prev = finalNode;
-        queueBeginning->prev->next = queueBeginning;
-    }
-    popped->next = 0;
-    popped->prev = 0;
-    return popped;
+    kprintf("edi: %d, esi: %d, ebp: %d, esp: %d, eflags: %d, cs: %d\n",
+            context->edi, context->esi, context->ebp, context->esp,
+            context->eflags, context->iret_cs);
+  
+    kprintf("cleaning ");
+*/    
+    kfree((void*)contextMemLoc);
 }
 
-struct pcb* popNodeFromFreeQueue() {
-    struct pcb* popped = freeQueue;
-
-    if (!freeQueue->next || (freeQueue->next == freeQueue)) {
-        freeQueue = 0;
-    } else {
-        struct pcb* finalNode = freeQueue->prev;
-        freeQueue = freeQueue->next;
-        freeQueue->prev = finalNode;
-        freeQueue->prev->next = freeQueue;
-    }
-    popped->next = 0;
-    popped->prev = 0;
-    return popped;
+unsigned int getContextMemLoc(pcb* process) {
+    return process->esp - process->stackSize + 132; //TODO: Why 132?
 }
 
-struct pcb* popNodeFromReadyQueue() {
-    struct pcb* popped = readyQueue;
-
-    if (!readyQueue->next || (readyQueue->next == readyQueue)) {
-        readyQueue = 0;
-    } else {
-        struct pcb* finalNode = readyQueue->prev;
-        readyQueue = readyQueue->next;
-        readyQueue->prev = finalNode;
-        readyQueue->prev->next = readyQueue;
-    }
-    popped->next = 0;
-    popped->prev = 0;
-    return popped;
-}
-
-// TODO: Why doesn't this abstraction work?
-
-/**
-        Given a node and a pointer to the beginning of a queue, 
-        the node will be inserted at the end of the queue.
- */
-void insertNodeAtEndOfQueue(struct pcb* node, struct pcb* queueBeginning) {
-    if (!queueBeginning) {
-        node->next = node;
-        node->prev = node;
-        queueBeginning = node;
-    } else {
-        struct pcb* finalQueueNode = queueBeginning->prev;
-        node->next = queueBeginning;
-        node->prev = finalQueueNode;
-        finalQueueNode->next = node;
-        queueBeginning->prev = node;
+extern void idleproc() {
+    int i;
+    for (i = 0; ; i++) {
+        //__asm __volatile("hlt");
+        testTraverseQueue(readyHead);
+        sysyield();
     }
 }
 
-/**
-        The given node will be inserted at the end of the free queue.
- */
-void insertNodeAtEndOfFreeQueue(struct pcb* node) {
-    if (!freeQueue) {
-        node->next = node;
-        node->prev = node;
-        freeQueue = node;
-    } else {
-        struct pcb* finalQueueNode = freeQueue->prev;
-        node->next = freeQueue;
-        node->prev = finalQueueNode;
-        finalQueueNode->next = node;
-        freeQueue->prev = node;
+void testTraverseQueue(pcb* queueHead) {
+    while(queueHead != NULL) {
+        printPcbData(queueHead);
+        queueHead = queueHead->next;
     }
 }
 
-/**
-        The given node will be inserted at the end of the ready queue
- */
-void insertNodeAtEndOfReadyQueue(struct pcb* node) {
-    printPcbData("data", node);
-    
-    if (!readyQueue) {
-        node->next = node;
-        node->prev = node;
-        readyQueue = node;
-    } else {
-        struct pcb* finalQueueNode = readyQueue->prev;
-        node->next = readyQueue;
-        node->prev = finalQueueNode;
-        finalQueueNode->next = node;
-        readyQueue->prev = node;
-    }
-    
-    traverseReadyQueue("Ready queue traverssse!");
-    debugSleep();
-
-}
-
-void printPcbData(char* info, struct pcb* node) {
-    kprintf("%s pcb: %d, ->prev: %d, ->next: %d\n", info,
-            node, node->prev, node->next);
-}
-
-void traverseQueue(char* msg, struct pcb* node) {
-    kprintf("%s: ", msg);
-    int i = 0;
-
-    struct pcb* currNode = node;
-    while ((i == 0 || (int) currNode != (int) node)) {
-        printPcbData(kprintf("%d", i), currNode);
-        i++;
-        currNode = currNode->next;
-
-        if (i % 16 == 0) {
-            debugSleep();
-        }
-    }
-
-    debugSleep();
-}
-
-extern void traverseReadyQueue(char* msg) {
-    traverseQueue(msg, readyQueue);
-}
-
-extern void debugSleep() {
-    int k;
-    for (k = 0; k < 10000000; k++);
+void printPcbData(pcb* proc) {
+    kprintf("proc %d, next %d, prev %d senderHead %d\n", 
+        proc, proc->next, proc->prev, proc->senderQueue);
 }

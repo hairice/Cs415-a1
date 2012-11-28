@@ -9,6 +9,23 @@ extern	int	end( void );    /* end of kernel image, use &end        */
 extern  long	freemem; 	/* start of free memory (set in i386.c) */
 extern char	*maxaddr;	/* max memory address (set in i386.c)	*/
 
+
+
+/*------------------------------------------------------------------------
+ *  The idle process 
+ *------------------------------------------------------------------------
+ */
+static void idleproc( void )	
+{
+    int	i;
+    //    kprintf("I");
+    for( i = 0; ; i++ ) {
+       sysyield();
+    }
+}
+
+
+
 /************************************************************************/
 /***				NOTE:				      ***/
 /***								      ***/
@@ -25,26 +42,28 @@ extern char	*maxaddr;	/* max memory address (set in i386.c)	*/
  */
 void initproc( void )				/* The beginning */
 {
-	kprintf( "\n\nCPSC 415, 2012W1\nA1 Solution Kernel\n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end ); 
+	kprintf( "\n\nCPSC 415, 2012W1\nA2 Solution Kernel\n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end ); 
 
         /* Your code goes here */
 
         kprintf("Max addr is %d %x\n", maxaddr, maxaddr);
 
         kmeminit();
-        kprintf("memory inited\n");
+        kprintf("Memory initialized.\n");
 
         dispatchinit();
-        kprintf("dispatcher inited\n");
+        kprintf("Dispatcher initialized.\n");
   
         contextinit();
-        kprintf("context inited\n");
+        kprintf("Context initialized.\n");
 
+	kprintf("Creating Idle Process\n");
+	create(idleproc, PROC_STACK);
+
+	kprintf("Creating Root Process\n");
         create( root, PROC_STACK );
-        unsigned int idleProcessPid = create(idleproc, PROC_STACK);
-        kprintf("idle process pid: %d\n", idleProcessPid);
-        idleProcess = getProcessByPid(idleProcessPid);
-        kprintf("create inited\n");
+
+	kprintf("System initialization completed\nSystem Starting\n");
   
         dispatch();
   
@@ -53,5 +72,4 @@ void initproc( void )				/* The beginning */
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }
-
 

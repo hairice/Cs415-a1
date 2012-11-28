@@ -36,7 +36,7 @@ char * rindex(register char *sp, register char c);
 int scanf(char * fmt, char args);
 int fscanf(int dev, char *fmt, int args);
 int sscanf(char * str, char *fmt, int args);
-int sprintf(char *str, char *fmt, int args);
+int sprintf(char *str, char *fmt, ...);
 char * strcat(register char *s1, register char *s2);
 int strcmp(register char *s1, register char *s2) ;
 char *strcpy(char *s1, char *s2);

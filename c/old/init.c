@@ -25,23 +25,33 @@ extern char	*maxaddr;	/* max memory address (set in i386.c)	*/
  */
 void initproc( void )				/* The beginning */
 {
-	kprintf( "\n\nCPSC 415, 2012W1 \n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end );
+	kprintf( "\n\nCPSC 415, 2012W1\nA1 Solution Kernel\n32 Bit Xeros 1.1\nLocated at: %x to %x\n", &entry, &end ); 
 
-	//kprintf("Application code beginning: %d\n", &initproc);
+        /* Your code goes here */
 
-	extern long initsp;
-	extern long freemem;
+        kprintf("Max addr is %d %x\n", maxaddr, maxaddr);
 
-	kmeminit();
-	contextinit();
-	initializeProcesses();
-	createRootProcess();
-	
-	//kprintf("initsp: %d\n", initsp);
-	//kprintf("freemem: %d\n", freemem);
+        kmeminit();
+        kprintf("memory inited\n");
 
-	dispatch();
+        dispatchinit();
+        kprintf("dispatcher inited\n");
+  
+        contextinit();
+        kprintf("context inited\n");
+
+        create( root, PROC_STACK );
+        unsigned int idleProcessPid = create(idleproc, PROC_STACK);
+        kprintf("idle process pid: %d\n", idleProcessPid);
+        idleProcess = getProcessByPid(idleProcessPid);
+        kprintf("create inited\n");
+  
+        dispatch();
+  
+        kprintf("Returned to init, you should never get here!\n");
 
         /* This code should never be reached after you are done */
 	for(;;); /* loop forever */
 }
+
+

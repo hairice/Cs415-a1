@@ -2,240 +2,132 @@
  */
 
 #include <xeroskernel.h>
+#include <i386.h>
 #include <xeroslib.h>
 #include <stdarg.h>
 
 
-void updateCurrentProcess(pcb* process);
-unsigned int getContextMemLoc(pcb* process);
+static pcb      *head = NULL;
+static pcb      *tail = NULL;
 
+void     dispatch( void ) {
+/********************************/
 
-static pcb* currentProcess = NULL;
+    pcb         *p;
+    int         r;
+    funcptr     fp;
+    int         stack;
+    va_list     ap;
+    char        *str;
+    int         len;
 
-static pcb *readyHead = NULL;
-static pcb *readyTail = NULL;
+    for( p = next(); p; ) {
+      //      kprintf("Process %x selected stck %x\n", p, p->esp);
 
-
-void dispatch(void) {
-    /********************************/
-
-    pcb *pcb;
-    int ctswNumber;
-    funcptr fp;
-    int stack;
-    va_list args;
-    
-    void* buffer;
-    int buffer_len;
-
-    for (pcb = next(); pcb;) {
-        //      kprintf("Process %x selected stck %x\n", p, p->esp);
-
-        ctswNumber = contextswitch(pcb);
-        switch (ctswNumber) {
-            case(SYS_CREATE):
-                args = (va_list) pcb->args;
-                fp = (funcptr) (va_arg(args, int));
-                stack = va_arg(args, int);
-                pcb->ret = create(fp, stack);
-                break;
-            case(SYS_YIELD):
-                ready(pcb);
-                pcb = next();
-                break;
-            case(SYS_STOP):
-                pcb->state = STATE_STOPPED;
-                cleanup(pcb);
-                pcb = next();
-                break;
-            case(TIMER_INT):
-                if (pcb->state != STATE_BLOCKED) ready(pcb);
-                pcb = next();
-                tick();
-                end_of_intr();
-                break;
-            case (SYS_SLEEP):
-                pcb->state = STATE_BLOCKED;
-                args = (va_list) pcb->args;
-                int ticks = va_arg(args, int);
-                sleep(ticks);
-                pcb = next();
-                //kprintf("-  %d  -  ", pcb->pid);
-                break;
-            case(SYS_SEND):
-                args = (va_list) pcb->args;
-                unsigned int receiverPid = va_arg(args, unsigned int);
-                buffer = va_arg(args, void*);
-                buffer_len = va_arg(args, int);
-                
-                pcb->ret = send(receiverPid, buffer, buffer_len, pcb);
-                //kprintf("back in disp.sys_send - current pcb is %d\n", pcb->pid);
-
-                if (pcb->state == STATE_BLOCKED) {
-                    //kprintf("%d is blocked, ", pcb->pid);
-                    pcb = next();
-                    //kprintf("getting next process: %d\n", pcb->pid);
-                } else {
-                  ready(pcb);
-                  pcb = next();
-                }
-                
-/*
-                kprintf("next pcb is: %d ", pcb->pid);
-                kprintf("next->next: %d\n", pcb->next->pid);
-*/
-                break;
-                
-            case(SYS_RECEIVE):
-                args = (va_list) pcb->args;
-                unsigned int* fromPid = va_arg(args, unsigned int*);    
-                buffer = va_arg(args, void*);
-                buffer_len = va_arg(args, int);
-                
-                //kprintf("in dis.recv - buffer_len = %d\n", buffer_len);
-                
-                pcb->ret = recv(pcb, fromPid, buffer, buffer_len);
-                
-                //kprintf("Back in disp receive - current pcb is %d, ", pcb->pid);
-                
-                if (pcb->state == STATE_BLOCKED) {
-                    //kprintf("State is blocked for %d\n", pcb->pid);
-                    pcb = next();
-                } else {
-                    //kprintf("State is not blocked for %d\n", pcb->pid);
-                    ready(pcb);
-                    pcb = next();
-                }
-                
-/*
-                kprintf("next pcb is %d, next next %d, and next next pid: %d\n", 
-                        pcb->pid, pcb->next, pcb->next->pid);
-*/
-                break;
-            default:
-                kprintf("Bad Sys request %d, pid = %d, ret %d\n", ctswNumber, pcb->pid, pcb->ret);
-        }
+      r = contextswitch( p );
+      switch( r ) {
+      case( SYS_CREATE ):
+        ap = (va_list)p->args;
+        fp = (funcptr)(va_arg( ap, int ) );
+        stack = va_arg( ap, int );
+        p->ret = create( fp, stack );
+        break;
+      case( SYS_YIELD ):
+        ready( p );
+        p = next();
+        break;
+      case( SYS_STOP ):
+        p->state = STATE_STOPPED;
+        p = next();
+        break;
+      case( SYS_PUTS ):
+	  ap = (va_list)p->args;
+	  str = va_arg( ap, char * );
+	  kprintf( "%s", str );
+	  p->ret = 0;
+	  break;
+      case( SYS_GETPID ):
+	p->ret = p->pid;
+	break;
+      case( SYS_SLEEP ):
+	ap = (va_list)p->args;
+	len = va_arg( ap, int );
+	sleep( p, len );
+	p = next();
+	break;
+      case( SYS_TIMER ):
+	tick();
+	ready( p );
+	p = next();
+	end_of_intr();
+	break;
+      default:
+        kprintf( "Bad Sys request %d, pid = %d\n", r, p->pid );
+      }
     }
 
-    kprintf("Out of processes: dying\n");
-
-    for (;;);
+    kprintf( "Out of processes: dying\n" );
+    
+    for( ;; );
 }
 
-extern void dispatchinit(void) {
-    /********************************/
+extern void dispatchinit( void ) {
+/********************************/
 
-    //bzero( proctab, sizeof( pcb ) * MAX_PROC );
-    memset(proctab, 0, sizeof ( pcb) * MAX_PROC);
-    
-    int i;
-    for (i = 1; i <= MAX_PROC; i++) {
-        pcb* proc = &proctab[i - 1];
-        proc->pid = i;
-    }
+  //bzero( proctab, sizeof( pcb ) * MAX_PROC );
+  memset(proctab, 0, sizeof( pcb ) * MAX_PROC);
 }
 
-extern void ready(pcb *p) {
-    /*******************************/
-    
+
+
+extern void     ready( pcb *p ) {
+/*******************************/
+
     p->next = NULL;
-    p->prev = NULL;
-    p->sleepDelta = 0;
     p->state = STATE_READY;
 
-    if (readyTail) {
-        readyTail->next = p;
+    if( tail ) {
+        tail->next = p;
     } else {
-        readyHead = p;
+        head = p;
     }
 
-    readyTail = p;
+    tail = p;
 }
 
-/**
- * Returns the next pcb in the readyQueue and updates the current process
- */
-extern pcb *next(void) {
-    /*****************************/
+extern pcb      *next( void ) {
+/*****************************/
+
     pcb *p;
 
-    p = readyHead;
+    p = head;
 
-    if (p) {
-        readyHead = p->next;
-        
-        if (!readyHead) {
-            readyTail = NULL;
+    if( p ) {
+        head = p->next;
+        if( !head ) {
+            tail = NULL;
         }
     } else {
-        p = idleProcess;
+        kprintf( "BAD\n" );
+        for(;;);
     }
 
-    updateCurrentProcess(p);
-
-    return (p);
-}
-
-extern void block(pcb *p) {
-    /*******************************/
-    p->state = STATE_BLOCKED;
     p->next = NULL;
     p->prev = NULL;
-    
-    //kprintf("post-block traversal\n");
-    //testTraverseQueue(readyHead);
+    return( p );
 }
 
-void updateCurrentProcess(pcb* process) {
-    currentProcess = process;
-}
 
-extern unsigned int getCurrentPid() {
-    return currentProcess->pid;
-}
+extern pcb *findPCB( int pid ) {
+/******************************/
 
-extern pcb* getCurrentProcess() {
-    return currentProcess;
-}
+    int	i;
 
-void cleanup(pcb* process) {
-    // TODO: if process stops while sending/receiving...
-    unsigned int contextMemLoc = getContextMemLoc(process);
-
-/*
-    kprintf("process->esp: %d, -stackSize: %d, contextMemLoc: %d\n", 
-        process->esp, process->esp - process->stackSize, contextMemLoc);
-
-    kprintf("edi: %d, esi: %d, ebp: %d, esp: %d, eflags: %d, cs: %d\n",
-            context->edi, context->esi, context->ebp, context->esp,
-            context->eflags, context->iret_cs);
-  
-    kprintf("cleaning ");
-*/    
-    kfree((void*)contextMemLoc);
-}
-
-unsigned int getContextMemLoc(pcb* process) {
-    return process->esp - process->stackSize + 132; //TODO: Why 132?
-}
-
-extern void idleproc() {
-    int i;
-    for (i = 0; ; i++) {
-        //__asm __volatile("hlt");
-        testTraverseQueue(readyHead);
-        sysyield();
+    for( i = 0; i < MAX_PROC; i++ ) {
+        if( proctab[i].pid == pid ) {
+            return( &proctab[i] );
+        }
     }
-}
 
-void testTraverseQueue(pcb* queueHead) {
-    while(queueHead != NULL) {
-        printPcbData(queueHead);
-        queueHead = queueHead->next;
-    }
-}
-
-void printPcbData(pcb* proc) {
-    kprintf("proc %d, next %d, prev %d senderHead %d\n", 
-        proc, proc->next, proc->prev, proc->senderQueue);
+    return( NULL );
 }

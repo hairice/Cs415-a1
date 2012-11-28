@@ -12,20 +12,12 @@
 */
 
 void _KernelEntryPoint(void);
-void _InterruptEntryPoint(void);
+void _TimerEntryPoint(void);
 
 static unsigned int        saveESP;
 static unsigned int        rc;
+static int                 trapNo;
 static long                args;
-static unsigned int interrupt;
-
-
-void contextinit( void ) {
-/*******************************/
-  set_evec( KERNEL_INT, (int) _KernelEntryPoint );
-  set_evec(TIMER_INT, (int) _InterruptEntryPoint);
-  initPIT(CLOCK_DIVISOR);
-}
 
 int contextswitch( pcb *p ) {
 /**********************************/
@@ -35,12 +27,6 @@ int contextswitch( pcb *p ) {
 
     saveESP = p->esp;
     rc = p->ret; 
-    //kprintf("pre-rc: %d\n", rc);
-    
-    int i;
-    //for (i=0; i < 1000000; i++);
-    
-    // Interrupt is a boolean variable set by, I don't know
  
     /* In the assembly code, switching to process
      * 1.  Push eflags and general registers on the stack
@@ -78,51 +64,52 @@ int contextswitch( pcb *p ) {
         movl    %%eax, 28(%%esp) \n\
         popa \n\
         iret \n\
-        \
-        _InterruptEntryPoint:\n\
-            cli\n\
-            pusha\n\
-            #movl $1, %%ecx\n\
-            movl $1, interrupt\n\
-            jmp _CommonJump\n\
-        _KernelEntryPoint: \n\
-            cli\n\
-            pusha\n\
-            movl $0, interrupt\n\
-        _CommonJump:\n\
-            movl    %%eax, %%ebx\n\
-            movl    saveESP, %%eax  \n\
-            movl    %%esp, saveESP  \n\
-            movl    %%eax, %%esp  \n\
-            movl    %%ebx, 28(%%esp) \n\
-            movl    %%edx, 20(%%esp) \n\
-            popa \n\
-            popf \n\
-            movl    %%eax, rc \n\
-            movl    %%edx, args \n\
-            #movl    %%ecx, interrupt\n\
+   _TimerEntryPoint: \n\
+        cli   \n\
+        pusha \n\
+        movl    $1, %%ecx \n\
+        jmp     _CommonJumpPoint \n \
+   _KernelEntryPoint: \n\
+        cli \n\
+        pusha  \n\
+        movl   $0, %%ecx \n\
+   _CommonJumpPoint: \n \
+        movl    %%eax, %%ebx \n\
+        movl    saveESP, %%eax  \n\
+        movl    %%esp, saveESP  \n\
+        movl    %%eax, %%esp  \n\
+        movl    %%ebx, 28(%%esp) \n\
+        movl    %%ecx, 24(%%esp)\n		\
+        movl    %%edx, 20(%%esp) \n\
+        popa \n\
+        popf \n\
+        movl    %%eax, rc \n\
+        movl    %%ecx, trapNo \n\
+        movl    %%edx, args \n\
         "
         : 
         : 
-        : "%eax", "%edx"
+        : "%eax", "%ebx", "%edx"
     );
 
     /* save esp and read in the arguments
      */
     p->esp = saveESP;
-    p->args = args;
-    
-    //kprintf("interrupt: %d\n", interrupt);    
-    if (interrupt) {
-        //context_frame* context = getProcessContext(p);
-        //context->eax = rc;
-        //kprintf("rc: %d, interupt: %d, ret: %d, args: %d, timer: %d\n", 
-        //        rc, interrupt, p->ret, args, TIMER_INT);
-        p->ret = rc;
-        //kprintf("rc: %d\n", rc);
-        rc = TIMER_INT;
+    if( trapNo ) {
+	/* return value (eax) must be restored, (treat it as return value) */
+	p->ret = rc;
+	rc = SYS_TIMER;
+    } else {
+        p->args = args;
     }
-    
-    
     return rc;
+}
+
+void contextinit( void ) {
+/*******************************/
+  kprintf("Context init called\n");
+  set_evec( KERNEL_INT, (int) _KernelEntryPoint );
+  set_evec( TIMER_INT,  (int) _TimerEntryPoint );
+  initPIT( 100 );
+
 }
