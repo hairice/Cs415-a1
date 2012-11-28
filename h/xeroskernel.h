@@ -52,6 +52,10 @@ extern void kfree(void *ptr);
 #define SYS_GETPID      8
 #define SYS_PUTS        9
 #define SYS_SLEEP       10
+#define SYS_SIGWAIT     11
+#define SYS_SIGRETURN   12
+#define SYS_KILL        13
+#define SYS_SIGHANDLER  14
 
 
 typedef void    (*funcptr)(void);
@@ -68,8 +72,8 @@ struct struct_pcb {
   int         state;
   int         pid;
   int         otherpid;
-  //signalEntry signalTable[32];
-  void*      buffer;
+  signalEntry signalTable[32];
+  void*       buffer;
   int         bufferlen;
   int         ret;
   int         sleepdiff;
@@ -111,6 +115,10 @@ void     set_evec(unsigned int xnum, unsigned long handler);
 void     tick(void);
 void     sleep(pcb*, int);
 
+
+extern pcb *findPCB(int pid);
+extern int isValidHandlerAddress(unsigned int handlerAddress);
+extern int isValidSignalNumber(int signal);
 
 extern void     root( void );
 void printCF (void * stack);

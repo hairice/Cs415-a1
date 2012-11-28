@@ -78,17 +78,37 @@ unsigned int syssleep( unsigned int t ) {
  * 
  */
 int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(void *)) {
-    if (signal > 31 || signal < 0) return -1;
+    return syscall(SYS_SIGHANDLER, signal, newhandler, oldHandler);
 }
 
+/**
+ * To be used only by the trampoline code. Replaces the stored stack pointer for
+ * the process with old_sp. Adjusts the mask that indeicates what signals are being
+ * accepted, and recovers any return code pushed onto the stack.
+ * 
+ * @param old_sp  the location in the application stack of the context frame to switch
+ *      the process to
+ */
 void sigreturn(void *old_sp) {
-    
+    return syscall(SYS_SIGRETURN, old_sp);
 }
 
+/**
+ * Requests that a signal be delivered to a process.
+ * @param PID  the pid of the process to deliver the signal to.
+ * @param signalNumber  the number of the signal to be delivered (0 - 31)
+ * @return  0 on success.
+ *      -18 if the target process doesn't exist
+ *      -3 if the signal number is invalid
+ */
 int syskill(int PID, int signalNumber) {
-    
+    return syscall(SYS_KILL, PID, signalNumber);
 }
 
+/**
+ * Causes the current process to be suspended until a signal is delivered to it.
+ * @return 
+ */
 int syssigwait(void) {
-    
+    return syscall(SYS_SIGWAIT);
 }
