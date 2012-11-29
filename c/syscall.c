@@ -77,8 +77,8 @@ unsigned int syssleep( unsigned int t ) {
  * of the older handler to the location pointed to by oldHandler
  * 
  */
-int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(void *)) {
-    return syscall(SYS_SIGHANDLER, signal, newhandler, oldHandler);
+int syssighandler(int signalNumber, void (*newhandler)(void *), void (**oldHandler)(void *)) {
+    return syscall(SYS_SIGHANDLER, signalNumber, newhandler, oldHandler);
 
     /*      // TEST CODE
     kprintf("Calling sighandler with signal %d and newhandler %d\n", signal, newhandler);
@@ -96,13 +96,14 @@ int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(vo
 
 /**
  * To be used only by the trampoline code. Replaces the stored stack pointer for
- * the process with old_sp. Adjusts the mask that indeicates what signals are being
+ * the process with old_sp. Adjusts the mask that indicates what signals are being
  * accepted, and recovers any return code pushed onto the stack.
  * 
  * @param old_sp  the location in the application stack of the context frame to switch
  *      the process to
  */
 void sigreturn(void *old_sp) {
+    kprintf("In sigreturn() - old_sp: %d\n", old_sp);
     return syscall(SYS_SIGRETURN, old_sp);
 }
 
@@ -117,7 +118,6 @@ void sigreturn(void *old_sp) {
 int syskill(int PID, int signalNumber) {
     //return syscall(SYS_KILL, PID, signalNumber);
     int ret = syscall(SYS_KILL, PID, signalNumber);
-    sprintf("syskill: %d\n", ret);
     return ret;
 }
 

@@ -20,6 +20,8 @@ void dispatch(void) {
     va_list ap;
     char *str;
     int len;
+    int signalNumber;
+    
 
     for (p = next(); p;) {
         //      kprintf("Process %x selected stck %x\n", p, p->esp);
@@ -57,11 +59,11 @@ void dispatch(void) {
                 break;
             case(SYS_SIGHANDLER):
                 ap = (va_list) p->args;
-                int signal = va_arg(ap, int);
+                signalNumber = va_arg(ap, int);
                 funcptr newHandler = (funcptr) (va_arg(ap, int));
                 funcptr* oldHandler = (funcptr) (va_arg(ap, int*));
                 
-                if (!isValidSignalNumber(signal)) {
+                if (!isValidSignalNumber(signalNumber)) {
                     p->ret = -1;
                     break;
                 } else if (!isValidHandlerAddress((unsigned int) newHandler)) {
@@ -69,7 +71,7 @@ void dispatch(void) {
                     break;
                 }
                 
-                signalEntry* pcbSignalEntry = &p->signalTable[signal];
+                signalEntry* pcbSignalEntry = &p->signalTable[signalNumber];
                 
                 *oldHandler = (funcptr)(pcbSignalEntry->handler);
                 //kprintf("pcb->handler: %d, oldHandler: %d, *oldHandler: %d\n", pcbSignalEntry->handler, oldHandler, *oldHandler);
@@ -87,19 +89,11 @@ void dispatch(void) {
                 p->state = STATE_SIGWAIT;
                 p = next();
                 break;
-            case(SYS_SIGRETURN):
-                ap = (va_list) p->args;
-                void* old_sp = va_arg(ap, void*);
-                p->esp = old_sp;
-                
-                // recover other data...
-                
-                break;
             case(SYS_KILL):
                 ap = (va_list) p->args;
-                int PID = va_arg(ap, int);
-                int signalNumber = va_arg(ap, int);
-                pcb* receivingPcb = findPCB(PID);
+                int pid = va_arg(ap, int);
+                signalNumber = va_arg(ap, int);
+                pcb* receivingPcb = findPCB(pid);
                 
                 if (!isValidSignalNumber(signalNumber)) { 
                     p->ret = -3;
@@ -109,9 +103,23 @@ void dispatch(void) {
                     break;
                 }
                 
-                // KILL
-
+                kprintf("going into signal\n");
+                signal(pid, signalNumber);
+                kprintf("Returning from signal\n");
+                if (receivingPcb->state == STATE_SIGWAIT) ready(receivingPcb);
                 p->ret = 0;
+                break;
+            case(SYS_SIGRETURN):
+                kprintf("in the dispatch part of sigreturn()...\n");    
+                ap = (va_list) p->args;
+                long old_sp = (long) va_arg(ap, void*);
+                
+                kprintf("curr_sp: %d, old_sp: %d\n", p->esp, old_sp);
+                
+                p->esp = (long) old_sp;
+                
+                // recover other data...
+                
                 break;
             case( SYS_TIMER):
                 tick();
@@ -191,7 +199,7 @@ extern int isValidHandlerAddress(unsigned int handlerAddress) {
     return 1;
 }
 
-extern int isValidSignalNumber(int signal) {
-    if (signal > 31 || signal < 0) return 0;
+extern int isValidSignalNumber(int signalNumber) {
+    if (signalNumber > 31 || signalNumber < 0) return 0;
     else return 1;
 }

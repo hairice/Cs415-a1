@@ -74,6 +74,7 @@ struct struct_pcb {
   int         pid;
   int         otherpid;
   signalEntry signalTable[32];
+  int         signalsWaiting;
   void*       buffer;
   int         bufferlen;
   int         ret;
@@ -100,11 +101,20 @@ typedef struct context_frame {
   unsigned int        stackSlots[0];
 } context_frame;
 
+typedef struct signal_stack {
+    unsigned int ret;
+    funcptr handler;
+    unsigned int esp;
+    unsigned int old_sp;
+    int ignoreSignalMask;
+}signal_stack;
+
 extern pcb      proctab[MAX_PROC];
 
 unsigned short getCS(void);
 void     kmeminit( void );
 void     *kmalloc( int size );
+extern int signal(int pid, int sig_no);
 void     dispatch( void );
 void     dispatchinit( void );
 void     ready( pcb *p );
@@ -116,13 +126,11 @@ void     set_evec(unsigned int xnum, unsigned long handler);
 void     tick(void);
 void     sleep(pcb*, int);
 void sigtramp(void (*handler)(void *), void *contextFrame, void *old_sp);
-int signal(int pid, int sig_no);
-
 
 
 extern pcb *findPCB(int pid);
 extern int isValidHandlerAddress(unsigned int handlerAddress);
-extern int isValidSignalNumber(int signal);
+extern int isValidSignalNumber(int signalNumber);
 
 extern void     root( void );
 void printCF (void * stack);
@@ -140,7 +148,7 @@ unsigned int syssleep( unsigned int t );
 int syssigwait(void);
 int syskill(int PID, int signalNumber);
 void sigreturn(void *old_sp);
-int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(void *));
+int syssighandler(int signalNumber, void (*newhandler)(void *), void (**oldHandler)(void *));
 
 
 void testHandler();
