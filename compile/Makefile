@@ -86,3 +86,4 @@ create.o: ../c/create.c ../h/xeroskernel.h
 user.o: ../c/user.c ../h/xeroskernel.h
 msg.o: ../c/msg.c ../h/xeroskernel.h
 sleep.o: ../c/sleep.c ../h/xeroskernel.h
+signal.o: ../c/signal.c ../h/xeroskernel.h

@@ -68,16 +68,23 @@ void dispatch(void) {
                     p->ret = -2;
                     break;
                 }
-
-                // DOES THIS WORK?
+                
                 signalEntry* pcbSignalEntry = &p->signalTable[signal];
-                *oldHandler = pcbSignalEntry->handler;
+                
+                *oldHandler = (funcptr)(pcbSignalEntry->handler);
+                //kprintf("pcb->handler: %d, oldHandler: %d, *oldHandler: %d\n", pcbSignalEntry->handler, oldHandler, *oldHandler);
+                
                 pcbSignalEntry->handler = newHandler;
+                
+                // test new handler
+                //kprintf("testing new handler\n");
+                //pcbSignalEntry->handler();
+                
 
                 p->ret = 0;
                 break;
             case(SYS_SIGWAIT):
-                p->state = STATE_STOPPED;
+                p->state = STATE_SIGWAIT;
                 p = next();
                 break;
             case(SYS_SIGRETURN):
@@ -95,7 +102,7 @@ void dispatch(void) {
                 pcb* receivingPcb = findPCB(PID);
                 
                 if (!isValidSignalNumber(signalNumber)) { 
-                    p->ret = -1;
+                    p->ret = -3;
                     break;
                 } else if (!receivingPcb) { 
                     p->ret = -18; 

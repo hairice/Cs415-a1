@@ -79,6 +79,19 @@ unsigned int syssleep( unsigned int t ) {
  */
 int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(void *)) {
     return syscall(SYS_SIGHANDLER, signal, newhandler, oldHandler);
+
+    /*      // TEST CODE
+    kprintf("Calling sighandler with signal %d and newhandler %d\n", signal, newhandler);
+    int ret = syscall(SYS_SIGHANDLER, signal, newhandler, oldHandler);
+    
+    // Testing old handler
+    kprintf("The old handler is %d; calling oldHandler function if not 0\n", *oldHandler);
+    funcptr oldHandlerFunc = (funcptr)(*oldHandler);
+    if (*oldHandler != 0) oldHandlerFunc();
+    
+    kprintf("sighandler return value: %d\n", ret);
+    return ret;
+    */
 }
 
 /**
@@ -102,7 +115,10 @@ void sigreturn(void *old_sp) {
  *      -3 if the signal number is invalid
  */
 int syskill(int PID, int signalNumber) {
-    return syscall(SYS_KILL, PID, signalNumber);
+    //return syscall(SYS_KILL, PID, signalNumber);
+    int ret = syscall(SYS_KILL, PID, signalNumber);
+    sprintf("syskill: %d\n", ret);
+    return ret;
 }
 
 /**
@@ -110,5 +126,16 @@ int syskill(int PID, int signalNumber) {
  * @return 
  */
 int syssigwait(void) {
-    return syscall(SYS_SIGWAIT);
+    //return syscall(SYS_SIGWAIT);
+    int ret = syscall(SYS_SIGWAIT);
+    sprintf("sigwait: %d\n", ret);
+    return ret;
+}
+
+void testHandler() {
+    kprintf("Hello, I am the replacement handler\n");
+}
+
+void testOldHandler() {
+    kprintf("I am the first handler\n");
 }

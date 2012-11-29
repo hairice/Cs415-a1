@@ -47,6 +47,17 @@ void consumer() {
 void     root() {
     char  buff[100];
     sysputs("Root has been called\n");
+    
+    // syssighandler() testing
+/*
+    unsigned int* oldHandler;
+    syssighandler(1, &testOldHandler, &oldHandler);
+    syssighandler(1, &testHandler, &oldHandler);
+    
+    
+    int i;
+    for(i = 0; i < 100000000; i++);
+*/
 
     sysyield();
     sysyield();

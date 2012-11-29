@@ -44,6 +44,7 @@ extern void kfree(void *ptr);
 #define STATE_STOPPED   0
 #define STATE_READY     1
 #define STATE_SLEEP     2
+#define STATE_SIGWAIT   3
 
 #define SYS_STOP        0
 #define SYS_YIELD       1
@@ -114,6 +115,9 @@ int      create( funcptr fp, int stack );
 void     set_evec(unsigned int xnum, unsigned long handler);
 void     tick(void);
 void     sleep(pcb*, int);
+void sigtramp(void (*handler)(void *), void *contextFrame, void *old_sp);
+int signal(int pid, int sig_no);
+
 
 
 extern pcb *findPCB(int pid);
@@ -137,3 +141,7 @@ int syssigwait(void);
 int syskill(int PID, int signalNumber);
 void sigreturn(void *old_sp);
 int syssighandler(int signal, void (*newhandler)(void *), void (**oldHandler)(void *));
+
+
+void testHandler();
+void testOldHandler();
