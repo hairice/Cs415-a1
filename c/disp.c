@@ -118,8 +118,10 @@ void dispatch(void) {
                 
                 p->esp = (long) old_sp;
                 
-                // recover other data...
-                
+                // TODO: recover other data...
+                signal_stack* signalStack = (signal_stack*)(p->esp);
+                kprintf("signalStack handler %d, esp %d, ret %d\n",
+                    signalStack->handler, signalStack->esp, signalStack->ret);
                 break;
             case( SYS_TIMER):
                 tick();
