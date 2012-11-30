@@ -10,7 +10,8 @@ devsw   deviceTable[4];
 
 extern void deviceinit() {
     devsw* keyboard1 = &deviceTable[0];
-    
+    keyboard1->dvwrite = (funcptr)(kbdwrite);
+    keyboard1->dvread = (funcptr)(kbdread);
 }
 
 /**
@@ -23,9 +24,16 @@ extern int di_open(int device_no) {
     
     // TODO: Check to see if the device is already open
     
-    pcb* process = findPCB(sysgetpid());
-    if (!process->fileDescriptorTable[device_no]) {
-        process->fileDescriptorTable[device_no] = 1;
+    pcb* process = findPCB(sysgetpid());    
+    
+    if (!process->fileDescriptorTable[device_no]->status) {
+        int majorNum = process->fileDescriptorTable[device_no];
+        devsw* device = &deviceTable[majorNum];
+        funcptr openHandler = (funcptr)(device->dvopen);
+        if (openHandler) openHandler();
+        
+        process->fileDescriptorTable[device_no]->status = 1;
+        process->fileDescriptorTable[device_no]->device = device;
     }
     
     return device_no;
@@ -43,8 +51,8 @@ extern int di_close(int fd) {
     // Mark as inactive in FDT
     
     pcb* process = findPCB(sysgetpid());
-    if (process->fileDescriptorTable[fd]) {
-        process->fileDescriptorTable[fd] = 0;
+    if (process->fileDescriptorTable[fd]->status) {
+        process->fileDescriptorTable[fd]->status = 0;
     }
     
     return 0;

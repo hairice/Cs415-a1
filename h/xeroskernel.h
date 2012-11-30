@@ -40,6 +40,8 @@ extern void kfree(void *ptr);
 #define KERNEL_INT      80
 #define TIMER_INT       (TIMER_IRQ + 32)
 #define PROC_STACK      (4096 * 4)
+#define KEYBOARD_INT    (32 + 1)
+
 
 #define STATE_STOPPED   0
 #define STATE_READY     1
@@ -87,6 +89,14 @@ typedef struct devsw {
 extern devsw   deviceTable[4];
 
 
+typedef struct file_descriptor {
+    int majorNum;
+    int minorNum;
+    devsw* device;
+    char* name;
+    int status;
+} file_descriptor;
+
 typedef void    (*funcptr)(void);
 
 typedef struct signalEntry {
@@ -103,7 +113,7 @@ struct struct_pcb {
   int         otherpid;
   signalEntry signalTable[32];
   int         signalsWaiting;
-  int         fileDescriptorTable[4];
+  file_descriptor         fileDescriptorTable[4];
   void*       buffer;
   int         bufferlen;
   int         ret;
