@@ -21,6 +21,9 @@ void dispatch(void) {
     char *str;
     int len;
     int signalNumber;
+    int fd;
+    void* buff;
+    int bufflen;
     
 
     for (p = next(); p;) {
@@ -104,10 +107,11 @@ void dispatch(void) {
                 }
                 
                 kprintf("going into signal\n");
-                signal(pid, signalNumber);
-                kprintf("Returning from signal\n");
+                p->ret = signal(pid, signalNumber);
+                kprintf("Returning from signal. Return val: %d\n", p->ret);
+                
                 if (receivingPcb->state == STATE_SIGWAIT) ready(receivingPcb);
-                p->ret = 0;
+
                 break;
             case(SYS_SIGRETURN):
                 kprintf("in the dispatch part of sigreturn()...\n");    
@@ -119,11 +123,47 @@ void dispatch(void) {
                 p->esp = (long) old_sp;
                 
                 // TODO: recover other data...
-                signal_stack* signalStack = (signal_stack*)(p->esp);
+                signal_stack* signalStack = (signal_stack*)(p->esp - sizeof(signal_stack));
                 kprintf("signalStack handler %d, esp %d, ret %d\n",
                     signalStack->handler, signalStack->esp, signalStack->ret);
+                
+                p->ret = 0;
+                
                 break;
-            case( SYS_TIMER):
+                
+            case(SYS_OPEN):
+                ap = (va_list) p->args;
+                int device_no = va_arg(ap, int);
+                p->ret = di_open(device_no);
+                break;
+            case(SYS_CLOSE):
+                ap = (va_list) p->args;
+                fd = va_arg(ap, int);
+                p->ret = di_close(fd);
+                break;
+            case(SYS_WRITE):
+                ap = (va_list) p->args;
+                fd = va_arg(ap, int);
+                buff = va_arg(ap, void*);
+                bufflen = va_arg(ap, int);
+                
+                p->ret = di_write(fd, buff, bufflen);
+                break;
+            case(SYS_READ):
+                ap = (va_list) p->args;
+                fd = va_arg(ap, int);
+                buff = va_arg(ap, void*);
+                bufflen = va_arg(ap, int);
+                p->ret = di_read(fd, buff, bufflen);
+                break;
+            case(SYS_IOCTL):
+                ap = (va_list) p->args;
+                fd = va_arg(ap, int);
+                unsigned long command = va_arg(ap, unsigned long);
+                
+                p->ret = di_ioctl(fd, command);
+                break;
+            case(SYS_TIMER):
                 tick();
                 ready(p);
                 p = next();

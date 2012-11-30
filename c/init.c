@@ -56,6 +56,9 @@ void initproc( void )				/* The beginning */
   
         contextinit();
         kprintf("Context initialized.\n");
+        
+        deviceinit();
+        kprintf("Devices initialized.\n");
 
 	kprintf("Creating Idle Process\n");
 	create(idleproc, PROC_STACK);

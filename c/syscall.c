@@ -132,6 +132,62 @@ int syssigwait(void) {
     return ret;
 }
 
+/**
+ * Opens a device.
+ * @param device_no  the major device number - can be used to index into the
+ *   device table
+ * @return an integer representing a file descriptor.
+ *      Ranges from 0-3 on success; -3 on failure
+ */
+extern int sysopen(int device_no) {
+    return syscall(SYS_OPEN, device_no);
+}
+
+/**
+ * Closes the provided descriptor
+ * @param fd  the file descriptor from a previous open call
+ * @return 0 on success; -1 on failure
+ */
+extern int sysclose(int fd) {
+    return syscall(SYS_CLOSE, fd);
+}
+
+/**
+ * Performs  write operation to the device associated with the provided file descriptor
+ * Up to bufflen bytes are written from buff
+ * @param fd  the file descriptor of the file to write to.
+ * @param buff  The data to write
+ * @param bufflen  The amount of data to write in bytes
+ * @return  the number of bytes written; -1 on failure
+ */
+extern int syswrite(int fd, void* buff, int bufflen) {
+    return syscall(SYS_WRITE, fd, buff, bufflen);
+}
+
+/**
+ * Reads up to bufflen bytes from the given file descriptor's device and stores
+ * the read data in the buffer area pointed to by buff
+ * @param fd  the file descriptor associated with the file to read from
+ * @param buff  location where data read is stored
+ * @param bufflen  the number of bytes to read
+ * @return  The number of bytes read or -1 on failure
+ */
+extern int sysread(int fd, void* buff, int bufflen) {
+    return syscall(fd, buff, bufflen);
+}
+
+/**
+ * Executes the specified control command. The action taken is device specific
+ * and depends upon the control command
+ * @param fd  file descriptor
+ * @param command  the device specific command to perform
+ * @param ...  additional parameters are device specific
+ * @return  0 on success; -1 on failure
+ */
+extern int sysioctl(int fd, unsigned long command, ...) {
+    return syscall(fd, command);
+}
+
 void testHandler() {
     kprintf("Hello, I am the replacement handler\n");
 }

@@ -63,7 +63,7 @@ extern int signal(int pid, int sig_no) {
         
     p->esp = stackPos;
     
-    kprintf("sstack esp: %d, hand %d, old %d, ret %d\n",
+    kprintf("signalStack esp: %d, handler %d, old_sp %d, ret %d\n",
         signalStack->esp, signalStack->handler, signalStack->old_sp, signalStack->ret);
     
     kprintf("Handler: %d\n", handler);

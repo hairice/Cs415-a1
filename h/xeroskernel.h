@@ -57,6 +57,34 @@ extern void kfree(void *ptr);
 #define SYS_SIGRETURN   12
 #define SYS_KILL        13
 #define SYS_SIGHANDLER  14
+#define SYS_OPEN        15
+#define SYS_CLOSE       16
+#define SYS_WRITE       17
+#define SYS_READ        18
+#define SYS_IOCTL       19
+
+typedef struct devsw {
+    int dvnum;
+    char *dvname;
+    int (*dvinit)();
+    int (*dvopen)();
+    int (*dvclose)();
+    int (*dvread)();
+    int (*dvwrite)();
+    int (*dvseek)();
+    int (*dvgetc)();
+    int (*dvputc)();
+    int (*dvcntl)();
+    void *dvcsr;
+    void *dvivec;
+    void *dvovec;
+    int (*dviint)();
+    int (*dvoint)();
+    void *dvioblk;
+    int dvminor;
+} devsw;
+
+extern devsw   deviceTable[4];
 
 
 typedef void    (*funcptr)(void);
@@ -75,6 +103,7 @@ struct struct_pcb {
   int         otherpid;
   signalEntry signalTable[32];
   int         signalsWaiting;
+  int         fileDescriptorTable[4];
   void*       buffer;
   int         bufferlen;
   int         ret;
@@ -114,6 +143,7 @@ extern pcb      proctab[MAX_PROC];
 unsigned short getCS(void);
 void     kmeminit( void );
 void     *kmalloc( int size );
+extern void deviceinit();
 extern int signal(int pid, int sig_no);
 void     dispatch( void );
 void     dispatchinit( void );
@@ -149,6 +179,20 @@ int syssigwait(void);
 int syskill(int PID, int signalNumber);
 void sigreturn(void *old_sp);
 int syssighandler(int signalNumber, void (*newhandler)(void *), void (**oldHandler)(void *));
+extern int sysopen(int device_no);
+extern int sysclose(int fd);
+extern int syswrite(int fd, void* buff, int bufflen);
+extern int sysread(int fd, void* buff, int bufflen);
+extern int sysioctl(int fd, unsigned long command, ...);
+
+
+/* Dispatch calls */
+extern int di_open(int device_no);
+extern int di_close(int fd);
+extern int di_write(int fd, void* buff, int bufflen);
+extern int di_read(int fd, void* buff, int bufflen);
+extern int di_ioctl(int fd, unsigned long command, ...);
+
 
 
 void testHandler();

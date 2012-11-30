@@ -52,7 +52,8 @@ void     root() {
 
     unsigned int* oldHandler;
     syssighandler(1, &testOldHandler, &oldHandler);
-    syskill(sysgetpid(), 1);
+    int ret = syskill(sysgetpid(), 1);
+    kprintf("Back in the root function after syskill(). Result = %d\n", ret);
     syssighandler(1, &testHandler, &oldHandler);
     
     
