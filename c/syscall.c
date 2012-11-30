@@ -137,7 +137,7 @@ int syssigwait(void) {
  * @param device_no  the major device number - can be used to index into the
  *   device table
  * @return an integer representing a file descriptor.
- *      Ranges from 0-3 on success; -3 on failure
+ *      Ranges from 0-3 on success; -1 on failure
  */
 extern int sysopen(int device_no) {
     return syscall(SYS_OPEN, device_no);

@@ -1,7 +1,4 @@
 /* kbd.h */
 
-#define KEYBOARD0       0
-#define KEYBOARD1       1
-
-extern int kbdwrite();
-extern int kbdread(char);
+#define	KBDPORT1        0x60		/* Keyboard port address, 0x60 #1	*/
+#define	KBDPORT2        0x64		/* Keyboard port address, 0x64 #2	*/

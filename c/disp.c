@@ -130,23 +130,25 @@ void dispatch(void) {
                 p->ret = 0;
                 
                 break;
-                
+            case(SYS_KEYBOARD):
+                kbd_handler();
+                end_of_intr();
+                break;
             case(SYS_OPEN):
                 ap = (va_list) p->args;
                 int device_no = va_arg(ap, int);
-                p->ret = di_open(device_no);
+                p->ret = di_open(p, device_no);
                 break;
             case(SYS_CLOSE):
                 ap = (va_list) p->args;
                 fd = va_arg(ap, int);
-                p->ret = di_close(fd);
+                p->ret = di_close(p, fd);
                 break;
             case(SYS_WRITE):
                 ap = (va_list) p->args;
                 fd = va_arg(ap, int);
                 buff = va_arg(ap, void*);
                 bufflen = va_arg(ap, int);
-                
                 p->ret = di_write(fd, buff, bufflen);
                 break;
             case(SYS_READ):
@@ -155,6 +157,8 @@ void dispatch(void) {
                 buff = va_arg(ap, void*);
                 bufflen = va_arg(ap, int);
                 p->ret = di_read(fd, buff, bufflen);
+                //p->state = STATE_SIGWAIT;
+                //p = next();
                 break;
             case(SYS_IOCTL):
                 ap = (va_list) p->args;

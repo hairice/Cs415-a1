@@ -9,9 +9,19 @@ int isFdValid(int fd);
 devsw   deviceTable[4];
 
 extern void deviceinit() {
-    devsw* keyboard1 = &deviceTable[0];
-    keyboard1->dvwrite = (funcptr)(kbdwrite);
-    keyboard1->dvread = (funcptr)(kbdread);
+    devsw* keyboardNonEcho = &deviceTable[KBD_NONECHO];
+    keyboardNonEcho->dvwrite = (funcptr)(kbdwrite);
+    keyboardNonEcho->dvread = (funcptr)(kbdNonEchoRead);
+    keyboardNonEcho->dvopen = (funcptr)(kbdopen);
+    keyboardNonEcho->dvclose = (funcptr)(kbdclose);
+    keyboardNonEcho->dvcntl = (funcptr)(kbdioctl);
+    
+    devsw* keyboardEcho = &deviceTable[KBD_ECHO];
+    keyboardEcho->dvwrite = (funcptr)(kbdwrite);
+    keyboardEcho->dvread = (funcptr)(kbdEchoRead);
+    keyboardEcho->dvopen = (funcptr)(kbdopen);
+    keyboardEcho->dvclose = (funcptr)(kbdclose);
+    keyboardEcho->dvcntl = (funcptr)(kbdioctl);
 }
 
 /**
@@ -19,24 +29,20 @@ extern void deviceinit() {
  * @param device_no
  * @return 
  */
-extern int di_open(int device_no) {
+extern int di_open(pcb* proc, int device_no) {
+    kprintf("In device_open()\n");
     if (device_no < 0 || device_no > 3) return -3;    
     
-    // TODO: Check to see if the device is already open
     
-    pcb* process = findPCB(sysgetpid());    
+    int ret = -1;
+    int majorNum = proc->fileDescriptorTable[device_no].majorNum;
+    devsw* device = &deviceTable[majorNum];
+    funcptr openHandler = (funcptr)(device->dvopen);
+    if (openHandler) ret = device->dvopen(proc, device, device_no);
+
     
-    if (!process->fileDescriptorTable[device_no]->status) {
-        int majorNum = process->fileDescriptorTable[device_no];
-        devsw* device = &deviceTable[majorNum];
-        funcptr openHandler = (funcptr)(device->dvopen);
-        if (openHandler) openHandler();
-        
-        process->fileDescriptorTable[device_no]->status = 1;
-        process->fileDescriptorTable[device_no]->device = device;
-    }
-    
-    return device_no;
+    kprintf("Leaving di_open()\n");
+    return ret;
 }
 
 /**
@@ -44,15 +50,16 @@ extern int di_open(int device_no) {
  * @param fd
  * @return 
  */
-extern int di_close(int fd) {
+extern int di_close(pcb* proc, int fd) {
     if (!isFdValid(fd)) return -1;
     
     // Check to see if device is open
     // Mark as inactive in FDT
     
-    pcb* process = findPCB(sysgetpid());
-    if (process->fileDescriptorTable[fd]->status) {
-        process->fileDescriptorTable[fd]->status = 0;
+    if (proc->fileDescriptorTable[fd].device) {
+        devsw* device = proc->fileDescriptorTable[fd].device;
+        funcptr closeHandler = (funcptr)(device->dvclose);
+        if (closeHandler) closeHandler( );
     }
     
     return 0;
@@ -73,14 +80,14 @@ extern int di_write(int fd, void* buff, int bufflen) {
 
 extern int di_read(int fd, void* buff, int bufflen) {
     if (!isFdValid(fd)) return -1;
-    
+    kprintf("In di_read()\n");    
     return deviceTable[fd].dvread(buff, bufflen);
 }
 
 extern int di_ioctl(int fd, unsigned long command, ...) {
     if (!isFdValid(fd)) return -1;
     
-    return deviceTable[fd].dvseek(command);
+    return deviceTable[fd].dvcntl(command);
 }
 
 int isFdValid(int fd) {

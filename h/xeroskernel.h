@@ -20,6 +20,10 @@ typedef	char		Bool;		/* Boolean type			*/
 					/*  (usu. defined as ^B)	*/
 #define	BLOCKERR	-5		/* non-blocking op would block	*/
 
+/* Keyboard constants */
+#define KBD_NONECHO     0
+#define KBD_ECHO        1
+
 /* Functions defined by startup code */
 
 
@@ -64,6 +68,7 @@ extern void kfree(void *ptr);
 #define SYS_WRITE       17
 #define SYS_READ        18
 #define SYS_IOCTL       19
+#define SYS_KEYBOARD    20
 
 typedef struct devsw {
     int dvnum;
@@ -197,12 +202,21 @@ extern int sysioctl(int fd, unsigned long command, ...);
 
 
 /* Dispatch calls */
-extern int di_open(int device_no);
-extern int di_close(int fd);
+extern int di_open(pcb* proc, int device_no);
+extern int di_close(pcb* proc, int fd);
 extern int di_write(int fd, void* buff, int bufflen);
 extern int di_read(int fd, void* buff, int bufflen);
 extern int di_ioctl(int fd, unsigned long command, ...);
 
+/* Keyboard */
+unsigned int kbtoa( unsigned char code );
+extern int kbdopen(pcb* process, devsw* device, int device_no);
+extern int kbdclose(pcb* process, devsw* device, int device_no);
+extern int kbdwrite();
+extern void kbdioctl(char newEofChar);
+extern int kbdEchoRead(void* buff, unsigned int bufflen);
+extern int kbdNonEchoRead(void* buff, unsigned int bufflen);
+extern int kbd_handler();
 
 
 void testHandler();

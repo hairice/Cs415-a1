@@ -44,7 +44,7 @@ void consumer() {
     sysstop();
 }
 
-void     root() {
+void     a2root() {
     char  buff[100];
     sysputs("Root has been called\n");
     
@@ -55,10 +55,13 @@ void     root() {
     int ret = syskill(sysgetpid(), 1);
     kprintf("Back in the root function after syskill(). Result = %d\n", ret);
     syssighandler(1, &testHandler, &oldHandler);
+    //di_open(KBD_NONECHO);
     
+    kprintf("Back in root\n");
+/*
     
     int i;
-    for(i = 0; i < 100000000; i++);
+    for(i = 0; i < 1000000; i++);
 
     sysyield();
     sysyield();
@@ -67,5 +70,16 @@ void     root() {
     syscreate( &consumer, 4096 );
     sprintf(buff, "Root finished\n");
     sysputs( buff );
+*/
+    sysstop();
+}
+
+void root() {
+    sysputs("Hello, I am Root\n");
+    int fd = sysopen(KBD_ECHO);
+    char buff[100];
+    sysputs("Reading bytes\n");
+    sysread(fd, buff, 4);
+    kprintf("read: %s\n", buff);
     sysstop();
 }
