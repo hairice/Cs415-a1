@@ -1,3 +1,13 @@
+This project is a class assignment and not a great example of how I generally
+write code, as some of the code is the professor's, and I was also rushed.
+I just put it up here in case I make a bunch of stupid mistakes and need to 
+revert the changes.
+
+
+
+
+
+-------------------------------------------------------------------------
 This directory contains the source code for the Xeros operating system
 which is a desicated version of the Xinu OS[1].
 
